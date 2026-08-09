@@ -1,0 +1,218 @@
+{
+  "songs": [],
+  "notices": [
+    {
+      "id": "sample1",
+      "title": "Sabbath School Class",
+      "date": "2026-06-28",
+      "calendar": "gc",
+      "time": "09:00",
+      "body": "Sabbath School is held every **Saturday** and **Sunday** at 9:00 AM. Everyone is cordially invited to attend.",
+      "createdAt": "2026-06-20T10:00:00.000Z"
+    },
+    {
+      "id": "sample2",
+      "title": "Gratitude Month Special Program",
+      "date": "2026-07-05",
+      "calendar": "gc",
+      "time": "14:00",
+      "body": "Next week, a special Gratitude Month program will be held at **2:00 PM**. We warmly invite everyone to come in large numbers.",
+      "createdAt": "2026-06-22T08:30:00.000Z"
+    },
+    {
+      "id": "sample3",
+      "title": "Baptism Class Registration",
+      "date": "2026-07-01",
+      "calendar": "gc",
+      "time": "",
+      "body": "Registration has opened for everyone who wishes to take baptism classes. You may register at the church office until **July 15**.",
+      "createdAt": "2026-06-25T09:00:00.000Z"
+    },
+    {
+      "id": "sample4",
+      "title": "Youth Meeting",
+      "date": "2026-07-10",
+      "calendar": "gc",
+      "time": "17:00",
+      "body": "All youth are cordially invited to attend this **Friday** at 5:00 PM in the church compound. There will be a special teaching program.",
+      "createdAt": "2026-06-26T14:00:00.000Z"
+    },
+    {
+      "id": "sample5",
+      "title": "Church Cleaning Day",
+      "date": "2026-07-12",
+      "calendar": "gc",
+      "time": "08:00",
+      "body": "This coming Saturday, a comprehensive church cleaning will take place. Everyone is invited to come with cleaning supplies at **8:00 AM**.",
+      "createdAt": "2026-06-27T11:00:00.000Z"
+    },
+    {
+      "id": "sample6",
+      "title": "Thanksgiving Mass",
+      "date": "2026-07-20",
+      "calendar": "gc",
+      "time": "10:00",
+      "body": "A special Thanksgiving mass will be held next **Sunday**. There will be a community breakfast after the service. Everyone is invited to attend.",
+      "createdAt": "2026-06-28T07:00:00.000Z"
+    },
+    {
+      "id": "mqwtue390a8f9",
+      "title": "Tuesday Worship Program",
+      "date": "2026-07-09",
+      "calendar": "ec",
+      "time": "11:00",
+      "body": "**11 - 12** Prayer\n**12 - 1:30** Teaching Program",
+      "type": "permanent",
+      "createdAt": "2026-07-09T20:00:00.000Z",
+      "active": true
+    },
+    {
+      "id": "mqwthu473a2d5",
+      "title": "Thursday Program",
+      "date": "2026-07-09",
+      "calendar": "ec",
+      "time": "11:00",
+      "body": "**11 - 12** Prayer\n**12 - 1:30** Prayer and Word Program",
+      "type": "permanent",
+      "createdAt": "2026-07-09T20:00:00.000Z",
+      "active": true
+    },
+    {
+      "id": "mqwsat284b5c7",
+      "title": "Saturday Program",
+      "date": "2026-07-09",
+      "calendar": "ec",
+      "time": "08:00",
+      "body": "**8 - 10** Children's Program\n**10:30 - 12:30** Youth Program",
+      "type": "permanent",
+      "createdAt": "2026-07-09T20:00:00.000Z",
+      "active": true
+    },
+    {
+      "id": "mqwsun193d7e8",
+      "title": "Sunday Program",
+      "date": "2026-07-09",
+      "calendar": "ec",
+      "time": "02:00",
+      "body": "**2 - 4** Prayer Program\n**4 - 6:00** Regular Worship Service Program",
+      "type": "permanent",
+      "createdAt": "2026-07-09T20:00:00.000Z",
+      "active": true
+    },
+    {
+      "id": "mqwkidscamp2026",
+      "title": "Winter Children's Program",
+      "date": "2026-07-13",
+      "calendar": "ec",
+      "time": "03:00",
+      "body": "This year's Winter Children's Program will be held **July 6 - 17**. 🌧\n\n📍 Parents are asked to bring their children to church from Monday to Friday during these days. The program starts at **3:00 AM/PM**.\n\n👉 We invite volunteers to help teach the children and assist the teachers.\n\n👉 We also ask for donations of school supplies such as paper, color, pencils, scissors, glue, and any other teaching tools as well as children's toys.\n\n👉 Those who would like to support by providing tea, breakfast, or lunch for the children can contact the children's teachers.\n\n👉 If you would like to support financially, you may help us at this account: **Debora Lukas 1000568886244**",
+      "type": "new",
+      "createdAt": "2026-07-09T20:15:00.000Z",
+      "active": true
+    }
+  ],
+  "bankAccounts": [
+    {
+      "id": "bank1",
+      "bankName": "Commercial Bank of Ethiopia",
+      "accountNumber": "1000001234567",
+      "holderName": "Kebena Meserete Kristos Church",
+      "logo": "cbe-logo.jpg",
+      "order": 0
+    },
+    {
+      "id": "bank2",
+      "bankName": "Oromia Bank S.C.",
+      "accountNumber": "2000007654321",
+      "holderName": "Kebena Meserete Kristos Church",
+      "logo": "oromia-logo.png",
+      "order": 1
+    },
+    {
+      "id": "bank3",
+      "bankName": "Berhan Bank S.C.",
+      "accountNumber": "3000005544332",
+      "holderName": "Kebena Meserete Kristos Church",
+      "logo": "berhanlog-logo.png",
+      "order": 2
+    },
+    {
+      "id": "bank4",
+      "bankName": "Tele Birr",
+      "accountNumber": "0987654321",
+      "holderName": "Kebena Meserete Kristos Church",
+      "logo": "tele-birr-logo.jpg",
+      "order": 3
+    }
+  ],
+  "social": [
+    {
+      "id": "social1",
+      "platform": "youtube",
+      "username": "@KebenaMesereteKristosChurch",
+      "url": "https://www.youtube.com/@KebenaMesereteKristosChurch",
+      "order": 0
+    },
+    {
+      "id": "social2",
+      "platform": "tiktok",
+      "username": "@kebena.mkc",
+      "url": "https://www.tiktok.com/@kebena.mkc",
+      "order": 1
+    },
+    {
+      "id": "social3",
+      "platform": "facebook",
+      "username": "@KebenaMKC",
+      "url": "https://web.facebook.com/p/%E1%89%80%E1%89%A0%E1%8A%93-%E1%88%98%E1%88%B0%E1%88%A8%E1%89%B0-%E1%8A%AD%E1%88%AD%E1%88%B5%E1%89%B6%E1%88%B5-%E1%89%A4%E1%89%B0-%E1%8A%AD%E1%88%AD%E1%88%B5%E1%89%B2%E1%8B%AB%E1%8A%95-Kebena-Meserete-Kirstos-Church-100067138225935",
+      "order": 2
+    },
+    {
+      "id": "social4",
+      "platform": "instagram",
+      "username": "@kebenamkc",
+      "url": "https://www.instagram.com/kebenamkc?igsh=aXJhaGEza3ZuZDEy",
+      "order": 3
+    }
+  ],
+  "bibleQuotes": [],
+  "servicePlaylists": [],
+  "countdownPresets": [],
+  "mediaLinks": [],
+  "slides": [],
+  "creed": [
+    "I believe in God the Father Almighty,",
+    "Maker of heaven and earth:",
+    "",
+    "And in Jesus Christ His only Son our Lord,",
+    "Who was conceived by the Holy Spirit,",
+    "Born of the Virgin Mary,",
+    "Suffered under Pontius Pilate,",
+    "Was crucified, dead, and buried;",
+    "He descended into hell;",
+    "The third day He rose again from the dead;",
+    "He ascended into heaven,",
+    "And sitteth on the right hand of God the Father Almighty;",
+    "From thence He shall come to judge the quick and the dead.",
+    "",
+    "I believe in the Holy Spirit;",
+    "The holy catholic church;",
+    "The communion of saints;",
+    "The forgiveness of sins;",
+    "The resurrection of the body;",
+    "And the life everlasting.",
+    "Amen!"
+  ],
+  "settings": {
+    "autoAdvanceSeconds": 8,
+    "lyricsAnimation": "line",
+    "lyricsIdleAnimation": "soundwave",
+    "noticeRotateSeconds": 10,
+    "noticesPerSlide": 3,
+    "churchName": "Kebena Meserete Kristos Church",
+    "slideDurationSeconds": 6,
+    "lyricsFontSize": 46,
+    "fontFamily": "Noto Sans Ethiopic",
+    "bibleFontFamily": "Noto Sans Ethiopic"
+  }
+}

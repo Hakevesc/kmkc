@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kebena MKC Display - Presentation</title>
+<link rel="stylesheet" href="styles/theme.css" />
+<link rel="stylesheet" href="styles/display.css" />
+<style>
+  /* Presentation window: no scrollbars, full bleed.
+     The frame is zoom-normalised to a 1920x1080 reference canvas by
+     presentRenderer.js, so 100% here is always the same logical size no
+     matter whether the output is a 720p projector or a 4K TV. */
+  html, body { overflow: hidden; margin: 0; padding: 0; width: 100%; height: 100%; background: #000; }
+  /* Non-16:9 outputs (4:3 / 16:10 projectors, ultrawides) keep the reference
+     size on the binding axis and gain slack on the other one — layouts are
+     centred, so the extra room shows up as margin, never as resized text. */
+  #presentBody { width: 100%; height: 100%; display: flex; flex-direction: column; opacity: 1; transition: opacity 0.15s ease-in-out; will-change: opacity; }
+  #presentBody.fading { opacity: 0; }
+  /* Hide operator chrome in the dedicated window — Esc key still works */
+  .present-exit { display: none !important; }
+  .present-minimize { display: none !important; }
+  .present-header { display: none !important; }
+  .present-overlay { position: relative; width: 100%; height: 100%; }
+  .present-overlay::before { display: none; }
+  .present-overlay.present-bible::before { display: block !important; }
+  /* Bible external: scrollable but no visible scrollbar */
+  /* min-height:0 is critical — flex children default to min-height:auto which
+     prevents overflow (child expands to fit content, no scrollbar ever appears) */
+  #presentBody .bible-stage { overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; min-height: 0; flex-shrink: 1; }
+  #presentBody .bible-stage::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+<div class="present-overlay" id="presentOverlay">
+  <div class="present-body" id="presentBody"></div>
+</div>
+<script>
+  // Apply the globally configured font to the presentation window
+  function applyFont(fontFamily) {
+    var font = fontFamily || 'Noto Sans Ethiopic';
+    document.documentElement.style.setProperty('--font', "'" + font + "', 'Segoe UI', sans-serif");
+    document.documentElement.style.setProperty('--presentation-font', "'" + font + "', 'Segoe UI', sans-serif");
+    document.documentElement.style.setProperty('--font-creed', "'" + font + "', 'Segoe UI', sans-serif");
+  }
+
+  // Listen for IPC messages from the main process to render content
+  // scrollOnly flag allows scroll sync without rebuilding the DOM
+  window.presentApi.onRender(function(data) {
+    var overlay = document.getElementById('presentOverlay');
+    var body = document.getElementById('presentBody');
+
+    // scrollOnly flag: only adjust scroll position, do NOT rebuild innerHTML
+    if (data.scrollOnly && data.variant === 'bible') {
+      if (data.fontFamily) applyFont(data.fontFamily);
+      var stage = body.querySelector('.bible-stage');
+      if (stage && stage.scrollHeight > stage.clientHeight) {
+        stage.scrollTop = data.scrollRatio * (stage.scrollHeight - stage.clientHeight);
+        if (overlay) {
+          overlay.classList.toggle('has-scrolled', stage.scrollTop > 30);
+          var isAtBottom = (stage.scrollTop + stage.clientHeight >= stage.scrollHeight - 15);
+          overlay.classList.toggle('at-bottom', isAtBottom);
+        }
+      } else if (overlay) {
+        overlay.classList.remove('has-scrolled');
+        overlay.classList.add('at-bottom');
+      }
+      return;
+    }
+
+    var isStringPayload = typeof data === 'string';
+    var html = isStringPayload ? data : (data && data.html);
+
+    // Settings-only payload (e.g. the operator changed the presentation font
+    // while a slide is up): apply it and leave the current slide untouched.
+    // Without this guard `data.html || data` stringifies the payload object
+    // and paints "[object Object]" over the audience screen.
+    if (!isStringPayload && (html === undefined || html === null)) {
+      if (data && data.fontFamily) applyFont(data.fontFamily);
+      if (data && data.variant) {
+        overlay.className = 'present-overlay';
+        overlay.classList.add('present-' + data.variant);
+      }
+      return;
+    }
+
+    // Full content update (new verses, different chapter, etc.)
+    body.classList.add("fading");
+    setTimeout(function() {
+      body.innerHTML = html || "";
+      body.classList.remove("fading");
+      // After new content is rendered, apply any initial scroll position
+      var applyScroll = function() {
+        var s = body.querySelector('.bible-stage');
+        if (s) {
+          if (s.scrollHeight > s.clientHeight) {
+            var ratio = data.scrollRatio !== undefined ? data.scrollRatio : 0;
+            s.scrollTop = ratio * (s.scrollHeight - s.clientHeight);
+            if (overlay) {
+              overlay.classList.toggle('has-scrolled', s.scrollTop > 30);
+              var isAtBottom = (s.scrollTop + s.clientHeight >= s.scrollHeight - 15);
+              overlay.classList.toggle('at-bottom', isAtBottom);
+            }
+          } else if (overlay) {
+            overlay.classList.remove('has-scrolled');
+            overlay.classList.add('at-bottom');
+          }
+        }
+      };
+      setTimeout(applyScroll, 50);
+      setTimeout(applyScroll, 150);
+    }, 150);
+
+    overlay.className = 'present-overlay';
+    if (data.variant) {
+      overlay.classList.add('present-' + data.variant);
+    }
+
+    // Apply the font from settings
+    if (data.fontFamily) {
+      applyFont(data.fontFamily);
+    }
+
+    // Auto scroll long notice cards on presented screen
+    if (data.variant === 'notices') {
+      setTimeout(startNoticeAutoScroll, 300);
+    }
+  });
+
+  // Notice Card Auto-Scroll Engine (2-sec pause at top/bottom, hidden scrollbar)
+  var noticeTimers = [];
+  function clearNoticeTimers() {
+    noticeTimers.forEach(function(t) { clearTimeout(t); clearInterval(t); });
+    noticeTimers = [];
+  }
+
+  function startNoticeAutoScroll() {
+    clearNoticeTimers();
+    var targets = document.querySelectorAll('.notice-card-body, .notice-single-body');
+    targets.forEach(function(el) {
+      el.scrollTop = 0;
+      if (el.scrollHeight > el.clientHeight + 10) {
+        var startDelay = setTimeout(function() {
+          var scrollInterval = setInterval(function() {
+            if (el.scrollTop >= el.scrollHeight - el.clientHeight - 4) {
+              clearInterval(scrollInterval);
+              var endPause = setTimeout(function() {
+                el.scrollTo({ top: 0, behavior: 'smooth' });
+                var restartPause = setTimeout(function() {
+                  startNoticeAutoScroll();
+                }, 2000);
+                noticeTimers.push(restartPause);
+              }, 2000);
+              noticeTimers.push(endPause);
+            } else {
+              el.scrollTop += 1;
+            }
+          }, 35);
+          noticeTimers.push(scrollInterval);
+        }, 2000);
+        noticeTimers.push(startDelay);
+      }
+    });
+  }
+
+  // When the output resolution changes (projector renegotiates, TV swapped in)
+  // the frame is re-scaled — re-measure anything that depends on box heights.
+  window.presentApi.onRescaled(function() {
+    var overlay = document.getElementById('presentOverlay');
+    if (overlay && overlay.classList.contains('present-notices')) {
+      setTimeout(startNoticeAutoScroll, 200);
+    }
+  });
+
+  // Track scroll position to update top/bottom fade overlay states
+  document.addEventListener('scroll', function(e) {
+    var stage = e.target;
+    if (stage && stage.classList && stage.classList.contains('bible-stage')) {
+      var overlay = document.getElementById('presentOverlay');
+      if (overlay) {
+        overlay.classList.toggle('has-scrolled', stage.scrollTop > 30);
+        var isAtBottom = (stage.scrollTop + stage.clientHeight >= stage.scrollHeight - 15);
+        overlay.classList.toggle('at-bottom', isAtBottom);
+      }
+    }
+  }, true);
+
+  // Clear and Close handlers are set up internally by the preload
+  window.presentApi.onClear();
+  window.presentApi.onClose();
+</script>
+</body>
+</html>

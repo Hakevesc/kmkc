@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Kebena MKC Display</title>
+<link rel="icon" type="image/png" href="assets/logo.png" />
+<link rel="stylesheet" href="styles/theme.css" />
+<link rel="stylesheet" href="styles/app.css" />
+<link rel="stylesheet" href="styles/display.css" />
+<link rel="stylesheet" href="styles/bibleContentUpdate.css" />
+</head>
+<body>
+<div id="app">
+  <header class="topbar" id="appSidebar">
+    <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Hide / Show Sidebar">
+      <span class="icon" id="sidebarToggleIcon"></span>
+    </button>
+    <div class="topbar-brand">
+      <img src="assets/logo.png" class="topbar-logo" alt="logo" />
+      <div class="topbar-titles">
+        <div class="topbar-church-line1" id="topbarChurchLine1"></div>
+        <div class="topbar-church-line2" id="topbarChurchLine2"></div>
+        <div class="topbar-church-line3" id="topbarChurchLine3"></div>
+      </div>
+    </div>
+    <nav class="topbar-nav" id="topNav">
+      <button class="nav-btn active" data-view="home"></button>
+      <button class="nav-btn" data-view="lyrics"></button>
+      <button class="nav-btn" data-view="notices"></button>
+      <button class="nav-btn" data-view="bible"></button>
+      <button class="nav-btn" data-view="bible-sync" id="bibleSyncNavBtn" title="Online Bible"></button>
+      <button class="nav-btn" data-view="creed" id="creedNavBtn" title="Creed"></button>
+      <button class="nav-btn" data-view="bank"></button>
+      <button class="nav-btn" data-view="slides"></button>
+      <button class="nav-btn" data-view="media"></button>
+      <button class="nav-btn" data-view="social"></button>
+      <button class="nav-btn" data-view="bible-quotes" id="bibleQuotesNavBtn" title="Bible Quotes"></button>
+      <button class="nav-btn" data-view="countdown"></button>
+      <button class="nav-btn" data-view="bible-editor" id="bibleEditorNavBtn" title="Bible Editor"></button>
+      <button class="nav-btn" data-view="settings" id="settingsNavBtn" title="Settings"></button>
+    </nav>
+  </header>
+
+  <main class="views">
+    <section id="view-home" class="view active">
+      <div class="home-cards" id="homeCards"></div>
+    </section>
+
+    <section id="view-lyrics" class="view" style="margin: -28px -32px; width: calc(100% + 64px); height: calc(100% + 56px); overflow: hidden; padding: 0;">
+      <div id="lyricsOperatorContainer" style="width:100%; height:100%;"></div>
+    </section>
+
+    <section id="view-notices" class="view" style="margin: -28px -32px; width: calc(100% + 64px); height: calc(100% + 56px); overflow: hidden; padding: 0;">
+      <div id="noticesOperatorContainer" style="width:100%;height:100%;"></div>
+    </section>
+
+    <section id="view-bank" class="view" style="margin: -28px -32px; width: calc(100% + 64px); height: calc(100% + 56px); overflow: hidden; padding: 0;">
+      <div id="bankOperatorContainer" style="width:100%; height:100%;"></div>
+    </section>
+
+    <section id="view-bible" class="view" style="margin: -28px -32px; width: calc(100% + 64px); height: calc(100% + 56px); overflow: hidden; padding: 0;">
+      <div id="bibleOperatorContainer" style="width:100%; height:100%;"></div>
+    </section>
+
+    <section id="view-slides" class="view" style="margin: -28px -32px; width: calc(100% + 64px); height: calc(100% + 56px); overflow: hidden; padding: 0;">
+      <div id="slidesOperatorContainer" style="width:100%; height:100%;"></div>
+    </section>
+
+    <section id="view-media" class="view" style="margin: -28px -32px; width: calc(100% + 64px); height: calc(100% + 56px); overflow: hidden; padding: 0;">
+      <div id="mediaOperatorContainer" style="width:100%; height:100%;"></div>
+    </section>
+
+    <section id="view-social" class="view" style="margin: -28px -32px; width: calc(100% + 64px); height: calc(100% + 56px); overflow: hidden; padding: 0;">
+      <div id="socialOperatorContainer" style="width:100%; height:100%;"></div>
+    </section>
+
+    <section id="view-creed" class="view" style="margin: -28px -32px; width: calc(100% + 64px); height: calc(100% + 56px); overflow: hidden; padding: 0;">
+      <div id="creedOperatorContainer" style="width:100%; height:100%;"></div>
+    </section>
+
+    <section id="view-bible-quotes" class="view" style="margin: -28px -32px; width: calc(100% + 64px); height: calc(100% + 56px); overflow: hidden; padding: 0;">
+      <div id="bibleQuotesOperatorContainer" style="width:100%; height:100%;"></div>
+    </section>
+
+    <section id="view-countdown" class="view" style="margin: -28px -32px; width: calc(100% + 64px); height: calc(100% + 56px); overflow: hidden; padding: 0;">
+      <div id="countdownOperatorContainer" style="width:100%; height:100%;"></div>
+    </section>
+
+    <section id="view-bible-editor" class="view" style="margin: -28px -32px; width: calc(100% + 64px); height: calc(100% + 56px); overflow: hidden; padding: 0;">
+      <div id="bibleEditorContainer" style="width:100%; height:100%; overflow:auto;"></div>
+    </section>
+
+    <section id="view-bible-sync" class="view">
+      <div class="panel-header">
+        <h2 id="bibleSyncTitle">🌐 Online Bible</h2>
+        <div class="panel-actions sync-controls">
+          <label for="ob-version-select">Version:</label>
+          <select id="ob-version-select" class="form-select ob-select-sm"></select>
+        </div>
+      </div>
+
+      <div class="ob-controls-card">
+        <!-- Row 1: Inputs -->
+        <div class="ob-row">
+          <div class="ob-col">
+            <label>Testament</label>
+            <div class="ob-radio-group">
+              <label class="ob-radio">
+                <input type="radio" name="ob-testament" id="ob-testament-ot" value="OT"> Old Testament
+              </label>
+              <label class="ob-radio">
+                <input type="radio" name="ob-testament" id="ob-testament-nt" value="NT" checked> New Testament
+              </label>
+            </div>
+          </div>
+          <div class="ob-col ob-flex-grow">
+            <label for="ob-book-select">Book</label>
+            <select id="ob-book-select" class="form-select"></select>
+          </div>
+          <div class="ob-col ob-col-small">
+            <label for="ob-chapter-input">Chapter</label>
+            <input type="number" id="ob-chapter-input" class="form-input" min="1" value="1">
+          </div>
+          <div class="ob-col ob-col-small">
+            <label for="ob-verse-input">Verse(s)</label>
+            <input type="text" id="ob-verse-input" class="form-input" placeholder="e.g. 2, 2-4 (blank = all)">
+          </div>
+        </div>
+
+        <!-- Row 2: Fetch + Present + Active Info — all one line -->
+        <div class="ob-action-row">
+          <button id="ob-fetch-btn" class="btn btn-primary ob-fetch-btn">
+            Fetch Verses
+          </button>
+          <button id="ob-present-btn" class="op-btn-present" style="display: none;" title="Present to display screen">
+            Present
+          </button>
+          <button id="ob-close-btn" class="op-btn-stop" style="display: none;" title="Close the presentation screen">
+            Close Presentation
+          </button>
+          <div id="ob-active-bar" class="ob-active-inline" style="display: none;">
+            <span class="ob-inline-sep">|</span>
+            <span id="ob-active-am" class="ob-active-am"></span>
+            <span class="ob-inline-sep">|</span>
+            <span id="ob-active-en" class="ob-active-en"></span>
+            <span class="ob-inline-sep">|</span>
+            <span id="ob-active-count" class="ob-verse-count"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live mirror of the audience screen + scroll controller.
+           Long passages don't fit one screen, so the operator scrolls this
+           preview and the presented screen follows — same mechanism as the
+           offline Bible view. Hidden until something is actually presented. -->
+      <div id="ob-live-wrap" class="ob-live-wrap" style="display: none;">
+        <div class="soc-op-preview-card ob-live-card">
+          <div class="soc-op-preview-header">
+            <div class="soc-op-preview-label">
+              <span class="soc-op-dot soc-op-dot-live" id="ob-live-dot"></span>
+              Presented Screen (Live)
+            </div>
+            <div class="soc-op-preview-timer" id="ob-live-status">LIVE</div>
+          </div>
+          <!-- soc-op-desktop-wrap gives this the exact same 16:9 framing and
+               scaled-down presentation typography as the offline Bible view's
+               live preview, so both Bible screens look and behave the same. -->
+          <div class="ob-live-preview soc-op-desktop-wrap" id="ob-live-preview"></div>
+        </div>
+
+        <div class="op-controller-bar">
+          <div class="op-controller-group">
+            <button class="op-btn-toggle op-btn-sm" id="ob-auto-btn">
+              <span class="icon"></span>
+              <span class="auto-scroll-label">Auto Scroll: Off</span>
+            </button>
+            <input type="number" id="ob-auto-speed" class="op-speed-input" value="1" min="1" max="10" title="Auto scroll speed (1 = slowest)">
+            <span class="op-speed-unit">sec</span>
+            <div style="display:flex; gap:4px;">
+              <button id="ob-scroll-up" class="op-btn-nav op-btn-sm" title="Scroll Up (ArrowLeft)"></button>
+              <button id="ob-scroll-down" class="op-btn-nav op-btn-sm" title="Scroll Down (ArrowRight)"></button>
+            </div>
+          </div>
+          <div class="op-controller-group">
+            <button id="ob-scroll-top" class="op-btn-toggle op-btn-sm" title="Jump back to the first verse">Top</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="ob-spinner" class="ob-spinner-container" style="display: none;">
+        <div class="ob-spinner"></div>
+        <p>Connecting to Bible.com... Please wait.</p>
+      </div>
+
+      <div id="ob-results" class="ob-results-area">
+        <div class="ob-empty">Select a book and chapter above, then click Fetch to load scriptures.</div>
+      </div>
+    </section>
+
+    <section id="view-settings" class="view settings-view">
+      <div class="settings-page-header">
+        <h1 id="settingsTitle">Settings</h1>
+        <p id="settingsSubtitle" class="settings-page-subtitle"></p>
+      </div>
+      <div class="settings-form" id="settingsForm"></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="modal-overlay hidden" id="reviewOverlay">
+  <div class="modal modal-wide" id="reviewContent"></div>
+</div>
+
+<div class="present-overlay hidden" id="presentOverlay">
+  <div class="present-header">
+    <img src="assets/logo.png" alt="logo" />
+    <div class="present-header-name" id="presentChurchName"></div>
+  </div>
+  <button class="present-minimize" id="presentMinimizeBtn"></button>
+  <button class="present-exit" id="presentExitBtn"></button>
+  <div class="present-body" id="presentBody"></div>
+</div>
+
+<script src="strings.js"></script>
+<script src="assets/icons.js"></script>
+<script src="js/fonts.js"></script>
+<script src="js/escapeHtml.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ethiopianCalendar.js"></script>
+<script src="js/present.js"></script>
+<script src="js/lyrics.js"></script>
+<script src="js/creed.js"></script>
+<script src="js/notices.js"></script>
+<script src="js/bankAccounts.js"></script>
+<script src="js/bible.js"></script>
+<script src="js/slides.js"></script>
+<script src="js/media.js"></script>
+<script src="js/countdown.js"></script>
+<script src="js/social.js"></script>
+<script src="js/bibleQuotes.js"></script>
+<script src="js/bibleContentUpdate.js"></script>
+<script src="js/bibleSync.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
+

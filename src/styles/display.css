@@ -1,0 +1,4647 @@
+/* Base overlay — fills the entire screen, sits above everything */
+.present-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Semi-transparent cardboard texture overlay at 50% for non-bank pages */
+.present-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('../assets/cardboard-texture.jpg');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Bank accounts: no cardboard texture, clean light background */
+.present-overlay.present-bank {
+  background: var(--color-bg);
+}
+.present-overlay.present-bank::before {
+  display: none;
+}
+
+/* Apply the custom presentation font only to the presented screens and previews */
+.lyrics-stage,
+.bank-stage,
+.bible-stage,
+.social-stage,
+.countdown-stage,
+.bq-stage,
+.operator-preview-screen,
+.operator-lyric-screen-box {
+  font-family: var(--presentation-font);
+}
+
+/* Weekly Notices presented screen: ALWAYS Noto Sans Ethiopic regardless of settings */
+.notice-stage,
+.notice-header,
+.notice-single-stage,
+.present-overlay.present-notices,
+.present-overlay.present-notices * {
+  font-family: 'Noto Sans Ethiopic', 'Segoe UI', sans-serif !important;
+}
+
+/* Keep all content above the texture overlay */
+.present-overlay > * { position: relative; z-index: 1; }
+
+.present-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 36px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: #fff;
+  border-bottom: 4px solid var(--color-accent);
+  flex-shrink: 0;
+}
+.present-header img { width: 56px; height: 56px; border-radius: 50%; background: #fff; object-fit: contain; padding: 4px; }
+.present-header-name { font-size: 1.4rem; font-weight: 700; font-family: 'Noto Sans Ethiopic', sans-serif !important; }
+
+.present-exit {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.25);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.18;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+.present-exit .icon { width: 20px; height: 20px; }
+.present-overlay:hover .present-exit,
+.present-exit:focus { opacity: 0.9; }
+/* On the clean white lyrics screen, the exit button stays hidden until hover */
+.present-overlay.present-lyrics .present-exit { opacity: 0; }
+.present-overlay.present-lyrics:hover .present-exit,
+.present-overlay.present-lyrics .present-exit:focus { opacity: 0.55; }
+
+/* Minimize sits left of the exit button and hides ONLY this local preview —
+   the audience screen keeps presenting. Mirrors the exit button's reveal-on-
+   hover behaviour so neither is ever burned into the operator's view. */
+.present-minimize {
+  position: absolute;
+  top: 18px;
+  right: 78px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.25);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.18;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+.present-minimize .icon { width: 22px; height: 22px; }
+.present-overlay:hover .present-minimize,
+.present-minimize:focus { opacity: 0.9; }
+.present-overlay.present-lyrics .present-minimize { opacity: 0; }
+.present-overlay.present-lyrics:hover .present-minimize,
+.present-overlay.present-lyrics .present-minimize:focus { opacity: 0.55; }
+
+/* ═══════════════════════════════════════════════════════════════
+   Operator stage previews — a real 1920x1080 presentation canvas
+   scaled down, so "Presented Screen (Live)" and "Pending Screen"
+   show exactly what the audience sees rather than an approximation.
+   Driven by window.Present.renderStagePreview().
+   ═══════════════════════════════════════════════════════════════ */
+.stage-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #000;
+}
+
+.stage-preview-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+/* .present-overlay is position:fixed for the real fullscreen overlay; inside a
+   preview it must stay within the canvas. */
+.stage-preview-canvas .present-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* present.html hides the operator chrome and the cardboard texture (Bible is
+   the one variant that keeps it) — match that, or previews show furniture the
+   audience never sees. */
+.stage-preview-canvas .present-header,
+.stage-preview-canvas .present-exit,
+.stage-preview-canvas .present-minimize { display: none !important; }
+.stage-preview-canvas .present-overlay::before { display: none; }
+.stage-preview-canvas .present-overlay.present-bible::before { display: block; }
+
+/* Shown in the control panel while the preview is minimized but the second
+   screen is still live — otherwise a hidden preview is indistinguishable from
+   a stopped presentation. */
+.present-resume-bar {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 190;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #f8fafc;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  font-size: 14px;
+  font-weight: 700;
+}
+.present-resume-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34,197,94,0.7);
+  animation: presentLivePulse 1.8s ease-out infinite;
+}
+@keyframes presentLivePulse {
+  70% { box-shadow: 0 0 0 10px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+.present-resume-bar button {
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  border: 0;
+}
+.present-resume-show { background: #2563eb; color: #fff; }
+.present-resume-stop { background: #334155; color: #f8fafc; }
+.present-resume-show:hover { background: #1d4ed8; }
+.present-resume-stop:hover { background: #475569; }
+
+.present-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; z-index: 1; }
+
+/* ---- Lyrics ---- */
+.present-overlay.present-lyrics { background: #ffffff; }
+.present-overlay.present-lyrics .present-header { display: none; }
+
+.lyrics-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: max(32px, 4vh) 6vw;
+}
+.lyrics-slide-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32em;
+  max-width: 1600px;
+  font-weight: 800;
+  font-size: 60pt;
+  line-height: 1.25;
+}
+.lyric-line { display: block; white-space: normal; word-break: break-word; }
+
+.kw {
+  color: #c2c6cc;
+  animation: kwReveal 0.45s ease forwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes kwReveal {
+  to { color: var(--active, #ed1c24); }
+}
+
+/* ---- Idle / Empty-slide animations ---- */
+
+/* --- 1. Classic Sound Wave (default 'soundwave') --- */
+.soundwave-visualizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 140px;
+  width: 100%;
+}
+.soundwave-bar {
+  width: 10px;
+  height: 15px;
+  border-radius: 5px;
+  background: linear-gradient(to bottom, #1f4497, #ed1c24);
+  animation: soundwave 0.8s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+.soundwave-bar:nth-child(1) { animation-delay: 0.1s; height: 35px; }
+.soundwave-bar:nth-child(2) { animation-delay: 0.3s; height: 55px; }
+.soundwave-bar:nth-child(3) { animation-delay: 0.5s; height: 75px; }
+.soundwave-bar:nth-child(4) { animation-delay: 0.2s; height: 45px; }
+.soundwave-bar:nth-child(5) { animation-delay: 0.4s; height: 65px; }
+.soundwave-bar:nth-child(6) { animation-delay: 0.6s; height: 85px; }
+.soundwave-bar:nth-child(7) { animation-delay: 0.1s; height: 25px; }
+.soundwave-bar:nth-child(8) { animation-delay: 0.3s; height: 55px; }
+.soundwave-bar:nth-child(9) { animation-delay: 0.5s; height: 95px; }
+.soundwave-bar:nth-child(10) { animation-delay: 0.2s; height: 35px; }
+.soundwave-bar:nth-child(11) { animation-delay: 0.4s; height: 55px; }
+.soundwave-bar:nth-child(12) { animation-delay: 0.6s; height: 75px; }
+.soundwave-bar:nth-child(13) { animation-delay: 0.1s; height: 25px; }
+.soundwave-bar:nth-child(14) { animation-delay: 0.3s; height: 45px; }
+.soundwave-bar:nth-child(15) { animation-delay: 0.5s; height: 15px; }
+
+@keyframes soundwave {
+  0% { transform: scaleY(1); }
+  100% { transform: scaleY(3.5); }
+}
+
+/* --- 2. Circular Equalizer --- */
+.circular-visualizer {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.circle-bar {
+  position: absolute;
+  width: 8px;
+  height: 32px;
+  border-radius: 4px;
+  transform-origin: center 120px;
+  /* Radially position 40 bars (9 degrees each) */
+  transform: rotate(calc(var(--i) * 9deg)) translateY(-100px);
+  /* Cylinder highlights to create 3D shape (Image 0 style) */
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 30%, rgba(0, 0, 0, 0.25) 100%),
+              hsl(calc(170 + var(--i) * 4.5), 100%, 62%);
+  box-shadow: 0 0 12px hsl(calc(170 + var(--i) * 4.5), 100%, 62%, 0.4);
+  animation: circularPulse 0.9s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -0.04s);
+}
+@keyframes circularPulse {
+  0% {
+    transform: rotate(calc(var(--i) * 9deg)) translateY(-100px) scaleY(0.35);
+  }
+  100% {
+    transform: rotate(calc(var(--i) * 9deg)) translateY(-100px) scaleY(2.2);
+  }
+}
+
+/* --- 2. Glow Waveform (Siri Style, Image 2 & 1) --- */
+.glow-wave-visualizer {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+.glow-wave-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.glow-path {
+  fill: none;
+  stroke-width: 3.5px;
+  filter: url(#waveGlow);
+}
+.glow-path.path-1 {
+  stroke: url(#waveGrad1);
+  animation: moveWaveLeftToRight 5.5s linear infinite;
+}
+.glow-path.path-2 {
+  stroke: url(#waveGrad2);
+  animation: moveWaveRightToLeft 7s linear infinite;
+}
+.glow-path.path-3 {
+  stroke: url(#waveGrad3);
+  animation: moveWaveLeftToRight 8.5s linear infinite;
+}
+
+/* Mirrored reflection with fade overlay (Image 2 style) */
+.glow-wave-reflection {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: scaleY(-0.45);
+  opacity: 0.35;
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 80%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 80%);
+}
+
+@keyframes moveWaveLeftToRight {
+  0% { transform: translateX(-400px); }
+  100% { transform: translateX(0px); }
+}
+@keyframes moveWaveRightToLeft {
+  0% { transform: translateX(0px); }
+  100% { transform: translateX(-300px); }
+}
+
+/* --- 3. Pulsing Cross --- */
+.pulse-cross-visualizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 140px;
+}
+.pulse-cross-shape {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  animation: pulseGlow 2.2s ease-in-out infinite;
+}
+.pulse-cross-shape::before,
+.pulse-cross-shape::after {
+  content: '';
+  position: absolute;
+  background: linear-gradient(to bottom, #1f4497, #ed1c24);
+  border-radius: 5px;
+}
+.pulse-cross-shape::before {
+  width: 22px;
+  height: 80px;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+}
+.pulse-cross-shape::after {
+  width: 80px;
+  height: 22px;
+  top: 30%;
+  left: 0;
+}
+@keyframes pulseGlow {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(31,68,151,0.5)); opacity: 1; }
+  50%       { transform: scale(1.18); filter: drop-shadow(0 0 28px rgba(31,68,151,0.95)); opacity: 0.85; }
+}
+
+/* --- 4. Floating Dots --- */
+.floating-dots-visualizer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 18px;
+  height: 140px;
+  width: 100%;
+  overflow: hidden;
+}
+.floating-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  animation: floatUp 2.6s ease-in-out infinite;
+  opacity: 0;
+  flex-shrink: 0;
+}
+.floating-dot:nth-child(odd)  { background: #1f4497; }
+.floating-dot:nth-child(even) { background: #ed1c24; }
+.floating-dot:nth-child(1) { animation-delay: 0s;    width: 10px; height: 10px; }
+.floating-dot:nth-child(2) { animation-delay: 0.35s; width: 16px; height: 16px; }
+.floating-dot:nth-child(3) { animation-delay: 0.7s;  width: 12px; height: 12px; }
+.floating-dot:nth-child(4) { animation-delay: 1.0s;  width: 18px; height: 18px; }
+.floating-dot:nth-child(5) { animation-delay: 1.35s; width: 10px; height: 10px; }
+.floating-dot:nth-child(6) { animation-delay: 0.2s;  width: 14px; height: 14px; }
+.floating-dot:nth-child(7) { animation-delay: 0.55s; width: 16px; height: 16px; }
+.floating-dot:nth-child(8) { animation-delay: 0.9s;  width: 12px; height: 12px; }
+.floating-dot:nth-child(9) { animation-delay: 1.25s; width: 10px; height: 10px; }
+@keyframes floatUp {
+  0%   { opacity: 0;   transform: translateY(0px)    scale(0.8); }
+  15%  { opacity: 0.9; transform: translateY(-15px)  scale(1); }
+  85%  { opacity: 0.5; transform: translateY(-110px) scale(0.9); }
+  100% { opacity: 0;   transform: translateY(-135px) scale(0.7); }
+}
+
+/* --- 5. Ripple Circles --- */
+.ripple-visualizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 140px;
+  position: relative;
+}
+.ripple-ring {
+  position: absolute;
+  border-radius: 50%;
+  animation: rippleExpand 2.8s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+  opacity: 0;
+}
+.ripple-ring:nth-child(1) { border: 3px solid #1f4497; animation-delay: 0s;    }
+.ripple-ring:nth-child(2) { border: 3px solid #ed1c24; animation-delay: 0.7s;  }
+.ripple-ring:nth-child(3) { border: 3px solid #1f4497; animation-delay: 1.4s;  }
+.ripple-ring:nth-child(4) { border: 3px solid #ed1c24; animation-delay: 2.1s;  }
+@keyframes rippleExpand {
+  0%   { width: 12px;  height: 12px;  opacity: 0.9; }
+  100% { width: 140px; height: 140px; opacity: 0;   }
+}
+
+/* --- 6. Breathing Glow --- */
+.breathing-glow-visualizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 140px;
+}
+.breathing-glow-orb {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 38%, #ffffff 0%, #1f4497 45%, #ed1c24 80%, transparent 100%);
+  animation: breatheGlow 3.2s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(31,68,151,0.6);
+}
+@keyframes breatheGlow {
+  0%, 100% { transform: scale(0.75); opacity: 0.55; box-shadow: 0 0 20px 4px rgba(31,68,151,0.25); }
+  50%       { transform: scale(1.3);  opacity: 1;    box-shadow: 0 0 60px 20px rgba(31,68,151,0.55); }
+}
+
+/* White variants when a background image/video is active */
+.lyrics-has-bg .soundwave-bar,
+.lyrics-text-white .soundwave-bar { background: #ffffff; }
+
+.lyrics-has-bg .circle-bar,
+.lyrics-text-white .circle-bar {
+  background: linear-gradient(90deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 30%, rgba(0, 0, 0, 0.2) 100%), #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+}
+
+.lyrics-has-bg .glow-path,
+.lyrics-text-white .glow-path {
+  stroke: #ffffff !important;
+}
+
+.lyrics-has-bg .pulse-cross-shape::before,
+.lyrics-has-bg .pulse-cross-shape::after,
+.lyrics-text-white .pulse-cross-shape::before,
+.lyrics-text-white .pulse-cross-shape::after { background: #ffffff; }
+
+.lyrics-has-bg .floating-dot,
+.lyrics-text-white .floating-dot { background: #ffffff !important; }
+
+.lyrics-has-bg .ripple-ring,
+.lyrics-text-white .ripple-ring { border-color: #ffffff !important; }
+
+.lyrics-has-bg .breathing-glow-orb,
+.lyrics-text-white .breathing-glow-orb {
+  background: radial-gradient(circle at 40% 38%, #ffffff 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
+  box-shadow: 0 0 60px 20px rgba(255, 255, 255, 0.4);
+}
+
+
+/* ---- Lyrics: background media (image / video / YouTube) ---- */
+.lyrics-stage.lyrics-has-bg {
+  position: relative;
+  overflow: hidden;
+  padding: 4vh 6vw;         /* keep text padding, bg ignores it */
+}
+
+/* bg layer fills the stage edge-to-edge regardless of padding */
+.lyrics-bg-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.lyrics-bg-layer img,
+.lyrics-bg-layer video,
+.lyrics-bg-layer iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border: none;
+  position: absolute;
+  inset: 0;
+}
+
+/* Blue overlay 85% opacity */
+.lyrics-bg-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(10, 40, 160, 0.85);
+}
+
+/* Text sits on top of bg + overlay */
+.lyrics-has-bg .lyrics-slide-text {
+  position: relative;
+  z-index: 2;
+}
+
+/* White text when bg is active — override initial gray */
+.lyrics-text-white.lyrics-slide-text .kw {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+
+.lyrics-controls {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 22px;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: transparent;
+  pointer-events: none;
+}
+.lyrics-controls.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.lyrics-nav-btn {
+  width: 58px; height: 58px; border-radius: 50%;
+  background: var(--color-primary); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.12s ease;
+}
+.lyrics-nav-btn:hover { transform: scale(1.08); }
+.lyrics-nav-btn .icon { width: 24px; height: 24px; }
+.lyrics-auto-btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 12px 22px; border-radius: 30px;
+  font-size: 1.05rem; font-weight: 700;
+  background: #eef2fb; color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+}
+.lyrics-auto-btn .icon { width: 18px; height: 18px; }
+.lyrics-auto-btn.active { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+.lyrics-progress {
+  font-size: 1.25rem; color: var(--color-text); font-weight: 700;
+  min-width: 84px; text-align: center;
+  background: #f0f1f4; padding: 8px 14px; border-radius: 20px;
+}
+
+/* ---- Notices: 2-column presentation ---- */
+.notice-header {
+  text-align: center;
+  padding: 40px 30px 12px;
+  flex-shrink: 0;
+}
+.notice-page-title {
+  font-size: clamp(40px, 5.5vw, 72px);
+  font-weight: 900;
+  color: var(--color-primary);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  line-height: 1.2;
+}
+.notice-ec-date {
+  font-size: clamp(26px, 3vw, 44px);
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-top: 6px;
+}
+.notice-stage {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(14px, 2vw, 28px);
+  padding: clamp(16px, 2.5vh, 30px) clamp(30px, 4vw, 70px) clamp(30px, 5vh, 60px);
+  perspective: 1200px;
+  align-content: stretch;
+}
+
+/* Single notice full-page layout */
+.notice-stage-single {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(20px, 3vh, 40px) clamp(40px, 5vw, 80px);
+}
+
+.notice-single-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notice-single-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: clamp(28px, 4vh, 50px) clamp(32px, 4vw, 56px);
+  box-shadow: var(--shadow-md);
+  border-top: 12px solid var(--color-primary);
+  max-width: 1400px;
+  max-height: 78vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  animation: cardFlipIn 0.6s ease-out;
+  box-sizing: border-box;
+}
+
+.notice-single-badge-row {
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.notice-single-title {
+  font-size: clamp(32px, 4vw, 60px);
+  font-weight: 900;
+  color: var(--color-primary);
+  margin-bottom: 20px;
+  line-height: 1.25;
+  flex-shrink: 0;
+}
+
+.notice-single-body {
+  font-size: clamp(24px, 2.8vw, 42px);
+  line-height: 1.55;
+  color: var(--color-text);
+  margin-bottom: 20px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.notice-single-body::-webkit-scrollbar {
+  display: none;
+}
+
+.notice-single-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 10px;
+  flex-shrink: 0;
+}
+
+.notice-single-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(24px, 2.8vw, 38px);
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.notice-single-meta-item .icon {
+  width: clamp(28px, 3vw, 38px);
+  height: clamp(28px, 3vw, 38px);
+  color: var(--color-accent);
+}
+.notice-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: clamp(24px, 3.5vh, 44px) clamp(22px, 3vw, 36px);
+  box-shadow: var(--shadow-md);
+  border-top: 10px solid var(--color-primary);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  transform-style: preserve-3d;
+  animation: cardFlipIn 0.6s ease-out;
+  max-height: 76vh;
+  box-sizing: border-box;
+}
+@keyframes cardFlipIn {
+  0% { opacity: 0; transform: rotateY(90deg) scale(0.9); }
+  60% { opacity: 1; transform: rotateY(-6deg) scale(1.02); }
+  100% { opacity: 1; transform: rotateY(0deg) scale(1); }
+}
+.notice-card:nth-child(1) { animation-delay: 0s; }
+.notice-card:nth-child(2) { animation-delay: 0.1s; }
+
+.notice-card-top { margin-bottom: 8px; display: flex; align-items: center; flex-shrink: 0; }
+.notice-card-badge {
+  display: inline-block;
+  font-size: clamp(16px, 1.8vw, 26px);
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 6px;
+  line-height: 1.3;
+}
+.notice-card-badge.badge-new { background: #ed1c24; color: #fff; }
+.notice-card-badge.badge-permanent { background: #363636; color: #fff; }
+
+.notice-card-title { font-size: clamp(24px, 3.2vw, 46px); font-weight: 800; margin-bottom: 18px; color: var(--color-primary); line-height: 1.25; flex-shrink: 0; }
+.notice-card-body { font-size: clamp(18px, 2.2vw, 32px); line-height: 1.5; color: var(--color-text); flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+.notice-card-body::-webkit-scrollbar { display: none; }
+.notice-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 12px; flex-shrink: 0; }
+.notice-meta-item { display: flex; align-items: center; gap: 10px; font-size: clamp(22px, 2.5vw, 34px); color: var(--color-accent); font-weight: 700; }
+.notice-meta-item .icon { width: clamp(28px, 3vw, 38px); height: clamp(28px, 3vw, 38px); color: var(--color-accent); }
+
+/* ---- Creed: 2 lines per slide, extra bold, large font ---- */
+.present-overlay.present-creed { background: #ffffff; }
+.present-overlay.present-creed .present-header { display: none; }
+
+.creed-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: max(40px, 6vh) 8vw;
+}
+.creed-slide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  max-width: 1400px;
+}
+.creed-line {
+  display: block;
+  font-family: var(--font);
+  font-weight: 900;
+  font-size: calc(clamp(72px, 10vw, 160px) * var(--creed-font-size, 1));
+  line-height: 1.3;
+  white-space: normal;
+  word-break: break-word;
+}
+.cw {
+  color: #d0d3d9;
+  animation: cwReveal 0.5s ease forwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes cwReveal {
+  to { color: var(--active, #363636); }
+}
+.creed-progress {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.2rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  background: rgba(255,255,255,0.85);
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1px solid var(--color-border);
+}
+
+/* ---- Bank accounts: clean background, no cardboard texture ---- */
+.present-overlay.present-bank { background: var(--color-bg); }
+.present-overlay.present-bank::before { display: none; }
+.bank-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 30px 30px;
+}
+.bank-header {
+  text-align: center;
+  padding: 30px 30px 20px;
+  flex-shrink: 0;
+}
+.bank-church-name {
+  font-size: clamp(36px, 4.5vw, 60px);
+  font-weight: 900;
+  color: var(--color-primary);
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+.bank-page-title {
+  font-size: clamp(40px, 5.5vw, 72px);
+  font-weight: 900;
+  color: var(--color-accent);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  line-height: 1.2;
+}
+.bank-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  justify-content: center;
+  align-content: center;
+  gap: 14px;
+  padding: 0 20px;
+  width: 100%;
+}
+.bank-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: left;
+  gap: 20px;
+  box-shadow: var(--shadow-md);
+  border-left: 8px solid var(--color-accent);
+  animation: bankCardIn 0.5s ease-out;
+}
+@keyframes bankCardIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+.bank-card-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1.5px solid var(--color-border);
+}
+.bank-card-logo img { width: 100%; height: 100%; object-fit: cover; }
+.bank-card-logo-fallback { background: #eef2fb; color: var(--color-primary); border: none; }
+.bank-card-logo-fallback .icon { width: 36px; height: 36px; }
+.bank-card-info { display: flex; flex-direction: column; align-items: flex-start; }
+.bank-card-name { font-size: 38px; font-weight: 900; color: var(--color-primary); line-height: 1.15; }
+.bank-card-number { font-size: 32px; font-weight: 900; color: var(--color-text); letter-spacing: 3px; margin-top: 6px; word-break: break-all; }
+.bank-card-holder { font-size: 20px; color: var(--color-text-muted); margin-top: 6px; font-weight: 600; }
+
+/* ---- 2x2 Grid design adjustments for exactly 4 accounts ---- */
+.bank-grid.bank-grid-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 28px;
+  padding: 0 40px;
+  max-width: 1600px;
+  margin: 0 auto;
+  align-content: stretch;
+}
+.bank-grid-4 .bank-card {
+  padding: 28px 36px;
+  gap: 32px;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.02);
+  border-left: 12px solid var(--color-accent);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 200px;
+}
+.bank-grid-4 .bank-card-logo {
+  width: clamp(96px, 9vw, 145px);
+  height: clamp(96px, 9vw, 145px);
+  border-radius: 50%;
+}
+.bank-grid-4 .bank-card-info {
+  justify-content: center;
+}
+.bank-grid-4 .bank-card-name {
+  font-size: clamp(32px, 3.2vw, 44px);
+  margin-bottom: 2px;
+}
+.bank-grid-4 .bank-card-number {
+  font-size: clamp(22px, 2.6vw, 36px);
+  margin-top: 4px;
+}
+.bank-grid-4 .bank-card-holder {
+  font-size: clamp(18px, 1.8vw, 24px);
+  margin-top: 6px;
+}
+
+/* ── Presentation loop state switching ── */
+.bank-stage[data-state="overview"] .bank-overview-grid { display: grid; }
+.bank-stage[data-state="overview"] .bank-spotlight { display: none !important; }
+.bank-stage[data-state="spotlight"] .bank-overview-grid { display: none !important; }
+.bank-stage[data-state="spotlight"] .bank-spotlight { display: flex; }
+
+/* ── Single bank spotlight presentation ── */
+.bank-spotlight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding: clamp(20px, 4vh, 40px) clamp(24px, 5vw, 60px);
+  gap: clamp(18px, 3vh, 32px);
+}
+
+.bank-spotlight-header {
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.bank-spotlight-church {
+  font-size: clamp(22px, 2.2vw, 32px);
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: 0.3px;
+}
+
+.bank-spotlight-card {
+  width: 100%;
+  max-width: 1100px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg), 0 20px 60px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: bankSpotlightIn 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes bankSpotlightIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.bank-spotlight-card-accent {
+  height: 10px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  flex-shrink: 0;
+}
+
+.bank-spotlight-card-body {
+  display: flex;
+  align-items: center;
+  gap: clamp(48px, 6vw, 96px);
+  padding: clamp(24px, 3vh, 40px) clamp(28px, 4vw, 56px);
+}
+
+.bank-spotlight-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  min-width: 220px;
+}
+
+.bank-spotlight-logo {
+  width: clamp(90px, 10vw, 140px);
+  height: clamp(90px, 10vw, 140px);
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.bank-spotlight-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bank-spotlight-logo-fallback {
+  color: var(--color-primary);
+}
+
+.bank-spotlight-logo-fallback .icon {
+  width: clamp(44px, 5vw, 64px);
+  height: clamp(44px, 5vw, 64px);
+}
+
+.bank-spotlight-name {
+  font-size: clamp(26px, 3vw, 40px);
+  font-weight: 900;
+  color: var(--color-primary);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.bank-spotlight-details {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(16px, 2vw, 28px);
+  min-width: 0;
+}
+
+.bank-spotlight-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: clamp(14px, 1.8vh, 22px) clamp(16px, 2vw, 24px);
+  border: 1.5px solid var(--color-border);
+}
+
+.bank-spotlight-label {
+  font-size: clamp(13px, 1.1vw, 16px);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.bank-spotlight-value {
+  font-size: clamp(20px, 2vw, 32px);
+  font-weight: 900;
+  color: var(--color-text);
+  word-break: break-all;
+  line-height: 1.25;
+}
+
+.bank-spotlight-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+.bank-spotlight-dots {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.bank-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-border);
+  transition: all 0.3s ease;
+}
+
+.bank-dot.active {
+  background: var(--color-accent);
+  transform: scale(1.25);
+}
+
+.bank-spotlight-progress {
+  width: 100%;
+  max-width: 600px;
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.bank-spotlight-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  border-radius: 999px;
+  width: 0%;
+  transition: width 0.3s linear;
+}
+
+/* Bank presentation readability redesign */
+.bank-stage {
+  padding: clamp(20px, 3vh, 36px) clamp(22px, 3vw, 44px) clamp(22px, 3vh, 34px);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 62%, #eef2fb 100%);
+}
+.bank-header { padding: 12px 20px 16px; }
+.bank-church-name { font-size: clamp(26px, 3.1vw, 46px); margin-bottom: 2px; }
+.bank-page-title { font-size: clamp(32px, 4.4vw, 64px); }
+.bank-grid {
+  gap: clamp(16px, 2vw, 28px);
+  padding: 0;
+}
+.bank-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(18px, 2vw, 30px);
+  border-radius: 8px;
+  border: 2px solid #dbeafe;
+  border-left: 12px solid var(--color-accent);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
+  padding: clamp(18px, 2.4vw, 34px);
+}
+.bank-card-logo {
+  width: clamp(82px, 8vw, 130px);
+  height: clamp(82px, 8vw, 130px);
+  border-radius: 50%;
+}
+.bank-card-info { min-width: 0; }
+.bank-card-name { font-size: clamp(26px, 3vw, 46px); line-height: 1.12; }
+.bank-card-number {
+  width: 100%;
+  font-size: clamp(24px, 3.2vw, 48px);
+  font-weight: 950;
+  color: #0f172a;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  margin-top: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+}
+.bank-card-holder {
+  font-size: clamp(17px, 1.8vw, 28px);
+  line-height: 1.2;
+  margin-top: 12px;
+}
+.bank-grid.bank-grid-4 {
+  gap: clamp(18px, 2.2vw, 32px);
+  padding: 0;
+}
+.bank-grid-4 .bank-card {
+  border-radius: 8px;
+  padding: clamp(20px, 2.6vw, 38px);
+  gap: clamp(18px, 2vw, 34px);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
+}
+.bank-grid-4 .bank-card-logo {
+  width: clamp(96px, 9vw, 145px);
+  height: clamp(96px, 9vw, 145px);
+  border-radius: 50%;
+}
+.bank-grid-4 .bank-card-name { font-size: clamp(26px, 2.8vw, 42px); }
+.bank-grid-4 .bank-card-number {
+  font-size: clamp(22px, 2.8vw, 42px);
+  margin-top: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.bank-grid-4 .bank-card-holder {
+  font-size: clamp(17px, 1.6vw, 25px);
+  margin-top: 10px;
+}
+.bank-spotlight {
+  padding: clamp(12px, 2vh, 24px) clamp(16px, 4vw, 56px);
+  gap: clamp(12px, 2vh, 24px);
+}
+.bank-spotlight-card {
+  max-width: 1500px;
+  border-radius: 8px;
+  border: 2px solid #dbeafe;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+}
+.bank-spotlight-card-accent { height: 12px; }
+.bank-spotlight-card-body {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.55fr) minmax(0, 1.45fr);
+  align-items: stretch;
+  padding: clamp(28px, 4vh, 58px) clamp(34px, 5vw, 78px);
+}
+.bank-spotlight-brand {
+  justify-content: center;
+  min-width: 0;
+  gap: clamp(14px, 2vh, 24px);
+}
+.bank-spotlight-logo {
+  width: clamp(120px, 13vw, 210px);
+  height: clamp(120px, 13vw, 210px);
+  border-radius: 50%;
+}
+.bank-spotlight-name { font-size: clamp(30px, 3.7vw, 58px); }
+.bank-spotlight-details {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: clamp(18px, 2vw, 28px);
+}
+.bank-spotlight-detail {
+  border-radius: 8px;
+  gap: 10px;
+  padding: clamp(18px, 2.4vh, 30px) clamp(22px, 3vw, 42px);
+}
+.bank-spotlight-detail:has(.bank-spotlight-account-number) {
+  justify-content: center;
+  background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
+  border: 3px solid #bfdbfe;
+  box-shadow: inset 0 0 0 1px #ffffff;
+}
+.bank-spotlight-label {
+  font-size: clamp(16px, 1.7vw, 26px);
+  font-weight: 900;
+  letter-spacing: 0;
+}
+.bank-spotlight-value {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.bank-spotlight-account-number {
+  font-size: clamp(72px, 10.5vw, 170px);
+  font-weight: 950;
+  color: #0f172a;
+  letter-spacing: 0.04em;
+  line-height: 0.98;
+  font-variant-numeric: tabular-nums;
+}
+.bank-spotlight-holder-name {
+  font-size: clamp(28px, 3.1vw, 54px);
+  color: var(--color-primary);
+}
+
+/* Single-bank spotlight: label-free, unboxed, one-line account display */
+.bank-stage[data-state="spotlight"] .bank-spotlight-header {
+  opacity: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.bank-stage[data-state="spotlight"] .bank-spotlight-church {
+  font-size: clamp(22px, 2.2vw, 36px);
+  font-weight: 800;
+  color: var(--color-primary, #1f4497);
+}
+.bank-spotlight-church-logo {
+  height: clamp(36px, 3.8vw, 60px);
+  width: auto;
+  object-fit: contain;
+}
+.bank-stage[data-state="spotlight"] .bank-spotlight-card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.bank-stage[data-state="spotlight"] .bank-spotlight-card-accent {
+  display: none;
+}
+.bank-stage[data-state="spotlight"] .bank-spotlight-card-body {
+  grid-template-columns: minmax(140px, 0.36fr) minmax(0, 1.64fr);
+  align-items: center;
+  padding: clamp(14px, 2.5vh, 42px) clamp(16px, 3vw, 60px);
+  gap: clamp(16px, 3vw, 44px);
+}
+.bank-stage[data-state="spotlight"] .bank-spotlight-logo {
+  width: clamp(130px, 14vw, 260px);
+  height: clamp(130px, 14vw, 260px);
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
+  flex-shrink: 0;
+}
+.bank-stage[data-state="spotlight"] .bank-spotlight-name {
+  font-size: clamp(28px, 3.8vw, 64px);
+  text-align: left;
+}
+.bank-stage[data-state="spotlight"] .bank-spotlight-details {
+  grid-template-rows: auto auto auto;
+  gap: clamp(8px, 1.4vh, 22px);
+  align-content: center;
+  min-width: 0;
+}
+.bank-stage[data-state="spotlight"] .bank-spotlight-label {
+  display: none;
+}
+.bank-stage[data-state="spotlight"] .bank-spotlight-detail,
+.bank-stage[data-state="spotlight"] .bank-spotlight-detail:has(.bank-spotlight-account-number) {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  min-width: 0;
+}
+.bank-stage[data-state="spotlight"] .bank-spotlight-account-number {
+  display: block;
+  width: 100%;
+  font-size: clamp(32px, 5.5vw, 110px);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bank-stage[data-state="spotlight"] .bank-spotlight-holder-name {
+  font-size: clamp(20px, 2.5vw, 46px);
+  line-height: 1.15;
+  color: #475569;
+}
+
+/* Responsive: stack vertically or adjust grid on lower resolution screens/projectors (<= 1024px) */
+@media (max-width: 1024px) {
+  .bank-stage[data-state="spotlight"] .bank-spotlight-card-body {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .bank-stage[data-state="spotlight"] .bank-spotlight-name {
+    text-align: center;
+  }
+
+  .bank-stage[data-state="spotlight"] .bank-spotlight-account-number {
+    font-size: clamp(32px, 6.2vw, 76px);
+    text-align: center;
+  }
+
+  .bank-stage[data-state="spotlight"] .bank-spotlight-holder-name {
+    text-align: center;
+  }
+
+  .bank-spotlight-brand {
+    min-width: auto;
+  }
+
+  .bank-spotlight-details {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+}
+
+/* BIBLE — full-chapter karaoke presentation */
+.present-overlay.present-bible { background: #ffffff; position: relative; }
+.present-overlay.present-bible .present-header { display: none; }
+.present-overlay.present-bible .present-exit { opacity: 0; z-index: 30; }
+.present-overlay.present-bible:hover .present-exit,
+.present-overlay.present-bible .present-exit:focus { opacity: 0.55; }
+
+/* White gradient fade overlays for smooth scrolling focus */
+/* Top fade removed as requested */
+
+/* Bottom fade overlay ONLY for the actual presented screen (fades out at bottom) */
+.present-overlay.present-bible::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: clamp(80px, 16vh, 180px);
+  background: linear-gradient(to top, #ffffff 30%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+  z-index: 15;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.present-overlay.present-bible.at-bottom::after {
+  opacity: 0;
+}
+
+/* Bible Book Selector Buttons */
+.bible-book-row {
+  font-size: 11px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff !important;
+  border: 1.5px solid #dde3ef !important;
+  color: #16213e !important;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.bible-book-row .book-num {
+  font-size: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: rgba(31, 68, 151, 0.08) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #1f4497 !important;
+  flex-shrink: 0;
+  margin-left: 3px;
+  align-self: center;
+  transition: all 0.12s ease;
+}
+
+.bible-book-row .book-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bible-book-row:hover:not(.active) {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+/* Active selected book button: RED button with WHITE text */
+.bible-book-row.active {
+  background: #ed1c24 !important;
+  border-color: #ed1c24 !important;
+  color: #ffffff !important;
+}
+
+.bible-book-row.active .book-num {
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+}
+
+/* bible-stage-wrapper: full-size flex column so the ref pill sits above the scroll */
+.bible-stage-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Ref pill row: above the scroll area, always visible, sits above top fade */
+.bible-ref-wrapper {
+  flex-shrink: 0;
+  padding: 16px 6vw 0;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 20; /* above ::before top fade (z-index:15) */
+}
+
+.bible-stage {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: center;
+  padding: 1.5vh 6vw max(45px, 5vh);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.bible-stage::-webkit-scrollbar {
+  display: none;
+}
+.bible-ref {
+  background-color: var(--color-accent);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: clamp(20px, 3vw, 48px);
+  padding: 8px 28px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+  display: inline-block;
+  box-shadow: 0 4px 12px rgba(228, 64, 95, 0.2);
+}
+
+/* Operator Preview Cards: tight padding to eliminate empty white space when auto-starting/scrolling */
+#bibleLivePreview,
+#biblePendingPreview {
+  padding: 0 !important;
+}
+
+#bibleLivePreview .bible-ref-wrapper,
+#biblePendingPreview .bible-ref-wrapper {
+  padding: 6px 10px 0 !important;
+}
+
+#bibleLivePreview .bible-ref,
+#biblePendingPreview .bible-ref {
+  font-size: 11px !important;
+  padding: 3px 12px !important;
+  margin-bottom: 4px !important;
+  box-shadow: none !important;
+}
+
+#bibleLivePreview .bible-stage,
+#biblePendingPreview .bible-stage {
+  padding: 4px 10px 10px !important;
+}
+.bible-verse-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32em;
+  max-width: 1500px;
+  font-weight: 800;
+  font-size: clamp(40px, 6vw, 96px);
+  line-height: 1.3;
+  text-align: center;
+}
+.bible-verse-num {
+  font-size: clamp(0.5em, 0.9vw, 0.7em);
+  font-weight: 700;
+  color: var(--color-accent);
+  background: #fde8ea;
+  border-radius: 999px;
+  padding: 4px 16px;
+  align-self: center;
+  margin-bottom: 0.2em;
+}
+
+/* ---- Media / YouTube ---- */
+.present-overlay.present-media { background: #000; }
+.present-overlay.present-media .present-header { display: none; }
+.present-overlay.present-media .present-exit { opacity: 0; color: #fff; }
+.present-overlay.present-media:hover .present-exit,
+.present-overlay.present-media .present-exit:focus { opacity: 0.7; }
+.present-overlay.present-media::before { display: none; }
+
+.media-stage {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  overflow: hidden;
+}
+.media-video {
+  max-width: 100vw;
+  max-height: 100vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border: none;
+  background: #000;
+}
+.media-iframe {
+  width: 100vw;
+  height: 100vh;
+  border: none;
+}
+
+/* ---- Slideshow ---- */
+.present-overlay.present-slides { background: #000; }
+.present-overlay.present-slides .present-header { display: none; }
+.present-overlay.present-slides .present-exit { opacity: 0; color: #fff; }
+.present-overlay.present-slides:hover .present-exit,
+.present-overlay.present-slides .present-exit:focus { opacity: 0.7; }
+.present-overlay.present-slides::before { display: none; }
+
+.slides-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  position: relative;
+}
+.slides-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: opacity 0.4s ease;
+}
+.slides-counter {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
+  background: rgba(0,0,0,0.4);
+  padding: 6px 16px;
+  border-radius: 20px;
+}
+
+/* ---- Countdown Timer ---- */
+.present-overlay.present-countdown { background: #ffffff; }
+.present-overlay.present-countdown .present-header { display: none; }
+.present-overlay.present-countdown .present-exit { opacity: 0; }
+.present-overlay.present-countdown:hover .present-exit,
+.present-overlay.present-countdown .present-exit:focus { opacity: 0.55; }
+
+.countdown-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4vh 6vw;
+  position: relative;
+}
+.countdown-title {
+  font-size: clamp(32px, 4vw, 56px);
+  font-weight: 800;
+  color: var(--color-primary);
+  margin-bottom: 20px;
+  line-height: 1.2;
+}
+.countdown-display {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.countdown-digits {
+  position: absolute;
+  font-size: clamp(44px, 7vw, 110px);
+  font-weight: 900;
+  color: #111111;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 4px;
+  transition: color 0.5s ease;
+}
+.countdown-progress-ring {
+  width: clamp(320px, 40vw, 520px);
+  height: clamp(320px, 40vw, 520px);
+}
+.countdown-progress-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.cd-ring-bg {
+  fill: none;
+  stroke: #ffe5e5;
+  stroke-width: 8;
+}
+.cd-ring-fg {
+  fill: none;
+  stroke: #ed1c24;
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear, stroke 0.5s ease;
+}
+.countdown-eth-time {
+  margin-top: 24px;
+  font-size: clamp(24px, 3vw, 40px);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+/* Flip Clock Card Styles */
+.flip-clock-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flip-card-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 15px;
+}
+.flip-card {
+  position: relative;
+  width: clamp(100px, 15vw, 180px);
+  height: clamp(120px, 18vw, 220px);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.flip-card-digits {
+  font-size: clamp(55px, 8vw, 110px);
+  font-weight: 800;
+  color: #0f172a;
+  font-family: 'Inter', sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.flip-card-divider {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.flip-card-hinge {
+  position: absolute;
+  top: calc(50% - 6px);
+  width: 8px;
+  height: 12px;
+  background: #94a3b8;
+  border-radius: 4px;
+  border: 1.5px solid #cbd5e1;
+  box-shadow: inset 1px 1px 2px rgba(255,255,255,0.6);
+  z-index: 10;
+}
+.flip-card-hinge-left {
+  left: -4px;
+  box-shadow: inset 1px 1px 2px rgba(255,255,255,0.6);
+}
+.flip-card-hinge-right {
+  right: -4px;
+  box-shadow: inset -1px 1px 2px rgba(255,255,255,0.6);
+}
+.flip-card-label {
+  margin-top: 16px;
+  font-size: clamp(12px, 1.5vw, 18px);
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* Stopwatch Bezel & Dial Face Styles */
+.stopwatch-stage {
+  background: #f8fafc;
+}
+.stopwatch-dial {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(320px, 40vw, 520px);
+  height: clamp(320px, 40vw, 520px);
+  background: #ffffff;
+  border: 10px solid #e2e8f0;
+  border-radius: 50%;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+}
+.stopwatch-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.stopwatch-lap-hint {
+  margin-top: 8px;
+  font-size: clamp(14px, 1.8vw, 24px);
+  font-weight: 700;
+  color: #ef4444;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.lap-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.lap-table tr {
+  transition: background-color 0.15s ease;
+}
+.lap-table tr:hover {
+  background-color: var(--color-surface-hover);
+}
+.countdown-controls {
+  position: absolute;
+  bottom: 40px;
+  display: flex;
+  gap: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.countdown-stage:hover .countdown-controls {
+  opacity: 1;
+}
+.countdown-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.12s ease;
+}
+.countdown-btn:hover { transform: scale(1.08); }
+.countdown-btn .icon { width: 24px; height: 24px; }
+
+/* ---- Bible equal layout: OT left, NT right, controls right ---- */
+.bible-manager-layout-equal {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 18px;
+  height: calc(100vh - 180px);
+  min-height: 0;
+}
+
+.bible-book-sidebar-equal {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.bible-testament-side-by-side {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 14px;
+  height: 100%;
+  min-height: 0;
+}
+
+.bible-testament-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bible-testament-label {
+  font-weight: 800;
+  color: var(--color-primary);
+  padding: 8px 12px;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.bible-book-list-equal {
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding-right: 4px;
+  flex: 1;
+  min-height: 0;
+}
+
+.bible-book-list-equal.ot-grid {
+  column-count: 3;
+  column-gap: 6px;
+  display: block;
+}
+
+.bible-book-list-equal.nt-grid {
+  column-count: 2;
+  column-gap: 6px;
+  display: block;
+}
+
+.bible-book-chip {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: stretch;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.bible-book-chip .book-num {
+  background: #e8ecf4;
+  color: #666666;
+  font-weight: 600;
+  font-size: 0.88rem;
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bible-book-chip .book-name {
+  background: #ffffff;
+  color: #333333;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  padding: 6px 10px;
+  font-weight: 500;
+  font-size: 0.88rem;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+.bible-book-chip:hover {
+  border-color: var(--color-primary-light);
+}
+
+.bible-book-chip.active {
+  border-color: var(--color-primary);
+}
+
+.bible-book-chip.active .book-num {
+  background: #ed1c24;
+  color: #fff;
+}
+
+.bible-book-chip.active .book-name {
+  background: var(--color-primary, #1e88e5);
+  color: #fff;
+}
+
+.bible-controls-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bible-top-bar {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.btn-present-top {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.btn-present-top:hover {
+  background: #c41820;
+  border-color: #c41820;
+}
+
+.bible-section-label {
+  font-weight: 800;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.bible-chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 8px;
+  padding: 4px 0;
+  overflow-y: auto;
+  max-height: 35vh;
+  align-content: start;
+  flex-shrink: 0;
+}
+
+.bible-chapter-num-btn {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bible-chapter-num-btn:hover {
+  border-color: var(--color-primary-light);
+  background: var(--color-bg);
+}
+
+.bible-chapter-num-btn.active { background: #ed1c24; color: #fff; border-color: #ed1c24; }
+
+.bible-verse-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 8px;
+  padding: 4px 0;
+  overflow-y: auto;
+  max-height: 35vh;
+  align-content: start;
+  flex: 1;
+  min-height: 0;
+}
+
+.bible-verse-num-btn {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bible-verse-num-btn:hover {
+  border-color: var(--color-primary-light);
+  background: var(--color-bg);
+}
+
+.bible-verse-num-btn.active {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+
+/* ---- Bible operator view ---- */
+.bible-operator-view {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 20% 80%;
+  gap: 18px;
+  padding: 18px;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.bible-operator-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.bible-operator-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: #fff;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.bible-presented-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.bible-presented-header .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.bible-presented-preview {
+  flex: 1;
+  background: #fff;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow-y: auto;
+  padding: 12px;
+  min-height: 0;
+}
+
+.bible-presented-preview .bible-stage {
+  height: auto;
+  min-height: 100%;
+  padding: 6px;
+}
+
+.bible-presented-preview .bible-stage .bible-ref {
+  font-size: 8px !important;
+  padding: 2px 6px;
+  margin-bottom: 4px;
+  box-shadow: none;
+}
+
+.bible-presented-preview .bible-stage .bible-verse-text {
+  font-size: 10px !important;
+  line-height: 1.2;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.operator-bible-stage {
+  display: block;
+}
+
+.operator-bible-verse-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.operator-verse-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+}
+
+.bible-operator-verse-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--color-accent);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 7px !important;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.operator-verse-text {
+  flex: 1;
+  font-size: 10px !important;
+  line-height: 1.4;
+}
+
+.bible-presented-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.bible-selected-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bible-verse-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  background: var(--color-accent);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.bible-book-panel {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.bible-book-panel-title {
+  padding: 14px;
+  font-weight: 900;
+  color: var(--color-primary);
+  border-bottom: 1.5px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.bible-testament-side-by-side {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 14px;
+  height: 100%;
+  min-height: 0;
+  padding: 10px;
+}
+
+.bible-testament-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bible-book-list-equal {
+  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding-right: 4px;
+  flex: 1;
+  min-height: 0;
+}
+
+.bible-book-row {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: stretch;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.bible-book-row .book-num {
+  background: #e8ecf4;
+  color: #666666;
+  font-weight: 600;
+  font-size: 0.78rem;
+  width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bible-book-row .book-name {
+  background: transparent;
+  color: #333333;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  padding: 6px 8px;
+  font-weight: 500;
+  font-size: 0.78rem;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+.bible-book-row:hover {
+  border-color: var(--color-primary-light);
+}
+
+.bible-book-row.active {
+  border-color: #ed1c24 !important;
+  background-color: #ed1c24 !important;
+}
+
+.bible-book-row.active .book-num {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.bible-book-row.active .book-name {
+  background: transparent !important;
+  color: #ffffff !important;
+}
+
+.bible-book-row:not(.active) .book-num {
+  background: rgba(31, 68, 151, 0.1);
+  color: var(--color-primary);
+}
+
+.bible-book-row:not(.active) .book-name {
+  background: transparent;
+  color: var(--color-text);
+}
+
+.bible-external-verse-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  background: var(--color-accent);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.external-verse-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.external-verse-text {
+  flex: 1;
+  font-size: clamp(32px, 4.5vw, 60px);
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+/* ── Operator view for lyrics presentation ── */
+.present-overlay.present-operator {
+  background: var(--color-bg);
+}
+.present-overlay.present-operator .present-header { display: none; }
+.present-overlay.present-operator .present-exit { display: none; }
+/* The operator dashboard keeps its minimize button: this is the one screen the
+   operator needs to step out of (back to the control panel) while the audience
+   screen carries on. It sits where the hidden exit button would have been. */
+.present-overlay.present-operator .present-minimize {
+  right: 24px;
+  opacity: 0.55;
+  background: rgba(15,23,42,0.55);
+}
+.present-overlay.present-operator:hover .present-minimize { opacity: 0.95; }
+
+.service-dashboard {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: #0f172a;
+  color: #f8fafc;
+  font-family: var(--font);
+}
+.service-topline,
+.service-quick-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  background: #111827;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.service-title { font-size: 1.25rem; font-weight: 900; text-align: center; }
+.service-subtitle { color: #cbd5e1; text-align: center; margin-top: 3px; }
+.service-grid {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 320px;
+  gap: 14px;
+  padding: 14px;
+  min-height: 0;
+}
+.service-run-list,
+.service-notes-panel,
+.service-preview-panel {
+  background: #1f2937;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  min-height: 0;
+}
+.service-run-list {
+  padding: 10px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.service-run-row {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  color: #e5e7eb;
+  text-align: left;
+  background: #111827;
+}
+.service-run-row.active { outline: 2px solid #60a5fa; background: #172554; }
+.service-run-row small { grid-column: 2; color: #94a3b8; }
+.service-preview-panel {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  overflow: hidden;
+}
+.service-preview-stage {
+  min-height: 0;
+  background: #000;
+  overflow: hidden;
+}
+.service-preview-stage > * {
+  transform-origin: top left;
+}
+.service-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.service-notes-panel {
+  padding: 14px;
+  overflow: auto;
+}
+.service-note {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #111827;
+  border-left: 4px solid #64748b;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.service-note.important { border-color: #ef4444; }
+.service-note.warning { border-color: #f59e0b; }
+.service-note.ok { border-color: #22c55e; }
+.service-check {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.service-check input { width: 20px; height: 20px; }
+.service-quick-controls {
+  justify-content: center;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 0;
+}
+.service-quick-controls button {
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: #334155;
+  color: #f8fafc;
+  font-weight: 800;
+}
+
+.service-bank-stage {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  align-content: center;
+  gap: clamp(18px, 2.4vw, 34px);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 62%, #eef2fb 100%);
+  color: #0f172a;
+  padding: clamp(28px, 5vw, 72px);
+}
+.service-bank-card {
+  width: 100%;
+  min-width: 0;
+  border: 2px solid #dbeafe;
+  border-left: 12px solid var(--color-accent);
+  border-radius: 8px;
+  padding: clamp(22px, 3vw, 44px);
+  display: grid;
+  gap: 12px;
+  text-align: center;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
+}
+.service-bank-card img {
+  width: clamp(90px, 10vw, 150px);
+  height: clamp(70px, 8vw, 115px);
+  object-fit: contain;
+  margin: 0 auto;
+}
+.service-bank-card strong {
+  font-size: clamp(26px, 3.2vw, 50px);
+  color: var(--color-primary);
+  line-height: 1.12;
+}
+.service-bank-card span {
+  font-size: clamp(44px, 6.2vw, 94px);
+  font-weight: 950;
+  color: #0f172a;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.service-bank-card small {
+  font-size: clamp(18px, 2vw, 30px);
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.operator-view {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+/* Toolbar at top */
+.operator-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--color-surface);
+  border-bottom: 1.5px solid var(--color-border);
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+.operator-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.operator-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.operator-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.operator-icon-btn:hover { background: var(--color-primary-light); }
+
+.operator-auto-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.operator-auto-btn:hover { background: var(--color-primary-light); }
+.operator-auto-btn.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+
+.operator-progress {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+  padding: 4px 10px;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+}
+
+.operator-screen-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  background: #e8ecf4;
+  color: var(--color-text-muted);
+}
+
+
+.operator-exit-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.operator-exit-btn:hover { opacity: 0.9; }
+
+/* Body: three columns side by side */
+.operator-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 32% 1fr 260px;
+  gap: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Left column: preview screen */
+.operator-preview-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-right: 1.5px solid var(--color-border);
+}
+
+.operator-preview {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.operator-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: #eef2fb;
+  border-bottom: 1.5px solid var(--color-border);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.operator-song-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.operator-preview-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.operator-preview-screen .lyrics-stage {
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.operator-preview-screen .lyrics-slide-text {
+  font-size: clamp(18px, 2vw, 30px);
+  gap: 0.15em;
+}
+
+.operator-preview-screen .creed-stage {
+  padding: 8px !important;
+  height: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.operator-preview-screen .creed-slide {
+  gap: 4px !important;
+  max-width: 100% !important;
+}
+
+.operator-preview-screen .creed-line {
+  font-size: clamp(14px, 1.8vw, 24px) !important;
+  line-height: 1.3 !important;
+}
+
+/* Creed pending preview: yellowish header to distinguish next slide */
+.operator-preview-pending .operator-preview-header.pending {
+  background: #fff3cd;
+  border-bottom-color: #ffeeba;
+}
+.operator-preview-pending .operator-preview-header.pending .next-label {
+  color: #856404;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+.operator-preview-screen.operator-preview-screen-pending .creed-line {
+  opacity: 0.55;
+}
+
+/* Right column: full lyrics navigator */
+.operator-nav-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  position: relative;
+}
+
+.operator-slide-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  padding: 8px;
+  background: var(--color-surface);
+  align-content: start;
+}
+
+/* Lyrics operator: mini presenter screen boxes */
+.operator-lyric-screen-btn {
+  display: block;
+  border-radius: 6px;
+  border: 2px solid var(--color-border);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  aspect-ratio: 16 / 9;
+  background: var(--color-surface);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.operator-slide-edit-btn {
+  cursor: pointer;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 32px;
+  height: 32px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: 6px;
+  border: 1.5px solid var(--color-border);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  z-index: 10;
+}
+
+.operator-lyric-screen-btn:hover .operator-slide-edit-btn {
+  opacity: 1;
+}
+
+.operator-slide-edit-btn:hover {
+  background: var(--color-primary-light);
+  color: #fff;
+  border-color: var(--color-primary-light);
+}
+
+/* Edit Slide Modal Overlay inside Operator */
+.operator-edit-slide-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+
+.operator-edit-slide-overlay.hidden {
+  display: none;
+}
+
+.operator-edit-slide-modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+  width: 90%;
+  max-width: 420px;
+  padding: 20px;
+  box-sizing: border-box;
+  animation: slideFadeIn 0.2s ease-out;
+}
+
+@keyframes slideFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+.operator-lyric-screen-btn:hover {
+  border-color: var(--color-primary-light);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  transform: scale(1.02);
+}
+
+.operator-lyric-screen-btn.active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary), 0 3px 12px rgba(0,0,0,0.25);
+}
+
+.operator-lyric-screen-box {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  box-sizing: border-box;
+  min-height: 72px;
+}
+
+.operator-lyric-screen-badge {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  background: rgba(0,0,0,0.08);
+  color: rgba(0,0,0,0.5);
+  font-size: 0.6rem;
+  font-weight: 700;
+  border-radius: 3px;
+  padding: 1px 4px;
+  line-height: 1.4;
+}
+
+.operator-lyric-screen-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  text-align: center;
+}
+
+.lyric-mini-line {
+  color: #111;
+  font-size: clamp(8px, 1.3vw, 14px);
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
+  text-align: center;
+  width: 100%;
+}
+
+.operator-lyric-screen-btn.active .lyric-mini-line {
+  color: #111;
+}
+
+.operator-lyric-screen-live {
+  position: absolute;
+  bottom: 4px;
+  right: 5px;
+  background: #ed1c24;
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 800;
+  border-radius: 3px;
+  padding: 1px 5px;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
+/* ---- Repeat/Pin button on each slide ---- */
+.operator-slide-pin-btn {
+  cursor: pointer;
+  box-sizing: border-box;
+  opacity: 1;
+  transition: background 0.12s ease, color 0.12s ease;
+  z-index: 10;
+}
+
+.operator-slide-pin-btn:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.operator-slide-pin-btn.pinned {
+  opacity: 1;
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.operator-slide-pin-btn.pinned:hover {
+  background: #c41820;
+}
+
+/* Pinned slide indicator on the slide box */
+.operator-lyric-screen-btn.is-pinned {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent), 0 2px 8px rgba(237, 28, 36, 0.2);
+}
+
+/* ---- Sticky Slide Container (fixed at top of nav column) ---- */
+#operatorStickySlides {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--color-bg);
+  border-bottom: 2.5px solid var(--color-accent);
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Compact half-height override styles for sticky/pinned slides at top */
+#operatorStickySlides .operator-lyric-screen-btn {
+  aspect-ratio: 32 / 9;
+}
+
+#operatorStickySlides .operator-lyric-screen-box {
+  min-height: 48px;
+  padding: 4px;
+}
+
+#operatorStickySlides .lyric-mini-line {
+  font-size: clamp(8px, 1.2vw, 12px);
+  line-height: 1.2;
+}
+
+#operatorStickySlides .operator-slide-pin-btn {
+  top: 4px;
+  right: 24px;
+  padding: 3px;
+}
+
+#operatorStickySlides .operator-slide-edit-btn {
+  top: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
+
+#operatorStickySlides .operator-lyric-screen-live {
+  bottom: 3px;
+  right: 4px;
+  font-size: 0.5rem;
+  padding: 0.5px 3px;
+}
+
+#operatorStickySlides .operator-lyric-screen-badge {
+  top: 3px;
+  left: 4px;
+  font-size: 0.55rem;
+  padding: 0.5px 3px;
+}
+
+
+
+.operator-slide-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-align: left;
+  transition: all 0.12s ease;
+  line-height: 1.4;
+}
+
+.operator-slide-row:hover {
+  border-color: var(--color-primary-light);
+  background: #f8f9fc;
+}
+
+.operator-slide-row.active {
+  border-color: var(--color-primary);
+  background: #eef2fb;
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.operator-slide-badge {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.operator-slide-row.active .operator-slide-badge {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.operator-slide-text {
+  flex: 1;
+  white-space: pre-line;
+  word-break: break-word;
+  color: var(--color-text);
+  font-weight: 500;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.operator-active-mark {
+  color: var(--color-accent);
+  font-size: 0.65rem;
+  flex-shrink: 0;
+  width: 12px;
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* Bottom song bar */
+.operator-song-bar {
+  display: flex;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--color-surface);
+  border-top: 1.5px solid var(--color-border);
+  overflow-x: auto;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.operator-song-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.12s ease;
+}
+
+.operator-song-chip:hover {
+  border-color: var(--color-primary-light);
+  background: #f8f9fc;
+}
+
+.operator-song-chip.active {
+  border-color: var(--color-primary);
+  background: #eef2fb;
+}
+
+.operator-song-chip-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.operator-song-chip-count {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.operator-song-chip.active .operator-song-chip-count {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* ---- Lyrics operator: background media column ---- */
+.operator-media-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-left: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.operator-media-header {
+  padding: 8px 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  border-bottom: 1.5px solid var(--color-border);
+  background: var(--color-bg);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.operator-media-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+}
+
+.operator-media-loading {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.operator-media-item {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 7px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg);
+  transition: border-color 0.12s ease, background 0.12s ease;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.operator-media-item:hover {
+  border-color: var(--color-primary-light);
+  background: #f2f4fb;
+}
+
+.operator-media-item.active {
+  border-color: var(--color-primary);
+  background: #e8edf9;
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.operator-media-thumb {
+  width: 42px;
+  height: 28px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+  display: block;
+}
+
+.operator-media-thumb-icon,
+.operator-media-thumb-none {
+  width: 42px;
+  height: 28px;
+  border-radius: 4px;
+  background: #1a1a2e;
+  color: rgba(255,255,255,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.operator-media-thumb-none {
+  background: #e8ecf4;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.operator-media-thumb-add {
+  width: 42px;
+  height: 28px;
+  border-radius: 4px;
+  background: #eef2fb;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.operator-media-label {
+  flex: 1;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.operator-media-check {
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.operator-media-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #7a89a8;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  margin-left: 2px;
+}
+.operator-media-delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+
+
+/* ---- Social Media presentation ---- */
+.present-overlay.present-social {
+  background: #ffffff;
+}
+.present-overlay.present-social::before { display: none; }
+.present-overlay.present-social .present-header { display: none; }
+.present-overlay.present-social .present-exit { opacity: 0; }
+.present-overlay.present-social:hover .present-exit,
+.present-overlay.present-social .present-exit:focus { opacity: 0.55; }
+
+.social-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+  background: #ffffff;
+  font-family: 'Noto Sans Ethiopic', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.social-overview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+}
+
+/* ── Overview: two-column QR + content ── */
+.social-overview-2col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(40px, 6vw, 100px);
+  width: 100%;
+  max-width: 1640px;
+  margin: 0 auto;
+  padding: clamp(20px, 3vh, 40px) clamp(24px, 4vw, 60px);
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
+}
+.social-overview-qr-side {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.social-qr-frame {
+  width: clamp(280px, 32vw, 520px);
+  aspect-ratio: 520 / 620;
+  border: clamp(6px, 0.8vw, 10px) solid #000;
+  border-radius: clamp(24px, 3vw, 48px);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 2vh, 32px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+  box-sizing: border-box;
+}
+.social-qr-img {
+  width: 100%;
+  max-width: clamp(200px, 22vw, 400px);
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: #fff;
+  display: block;
+}
+.social-qr-handle {
+  font-size: clamp(28px, 3vw, 52px);
+  font-weight: 900;
+  color: #000;
+  margin-top: clamp(14px, 2.5vh, 32px);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  word-break: break-word;
+  text-align: center;
+  line-height: 1.2;
+}
+.social-overview-content-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 900px;
+  min-width: 0;
+}
+.social-pretitle {
+  font-size: clamp(24px, 2.8vw, 56px);
+  font-weight: 900;
+  color: #000;
+  letter-spacing: clamp(2px, 0.5vw, 6px);
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.social-title {
+  font-size: clamp(40px, 6vw, 120px);
+  font-weight: 900;
+  line-height: 1.05;
+  margin-top: clamp(4px, 0.5vh, 8px);
+  text-transform: uppercase;
+}
+.social-title-gradient {
+  background: linear-gradient(90deg, #1e88e5 0%, #42a5f5 50%, #1e88e5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.social-subtitle {
+  font-size: clamp(16px, 1.8vw, 28px);
+  color: #333;
+  line-height: 1.5;
+  margin-top: clamp(16px, 2.5vh, 40px);
+  max-width: 700px;
+  font-weight: 600;
+}
+.social-overview-icons {
+  display: flex;
+  gap: clamp(12px, 1.5vw, 28px);
+  margin-top: clamp(20px, 3vh, 60px);
+}
+.social-overview-icon {
+  width: clamp(78px, 9vh, 120px);
+  height: clamp(78px, 9vh, 120px);
+  border-radius: 20px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(10px, 1.2vh, 16px);
+  box-sizing: border-box;
+  transition: transform 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.social-overview-icon:hover { transform: scale(1.1); }
+.social-overview-icon svg,
+.social-overview-icon .icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ── Spotlight: two-column design ── */
+.social-spotlight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: clamp(14px, 2vh, 28px) clamp(24px, 4vw, 60px);
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.social-spotlight-2col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(40px, 7vw, 120px);
+  width: 100%;
+  max-width: 1400px;
+  animation: socialSpotlightIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes socialSpotlightIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: none; }
+}
+.social-spotlight-qr-side {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.social-spotlight-content-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 700px;
+  min-width: 0;
+}
+.social-pretitle {
+  font-size: clamp(24px, 2.8vw, 56px);
+  font-weight: 900;
+  color: #000;
+  letter-spacing: clamp(2px, 0.5vw, 6px);
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.social-title {
+  font-size: clamp(40px, 6vw, 120px);
+  font-weight: 900;
+  line-height: 1.05;
+  margin-top: clamp(4px, 0.5vh, 8px);
+  text-transform: uppercase;
+}
+.social-title-gradient {
+  background: linear-gradient(90deg, #1e88e5 0%, #42a5f5 50%, #1e88e5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.social-subtitle {
+  font-size: clamp(16px, 1.8vw, 28px);
+  color: #333;
+  line-height: 1.5;
+  margin-top: clamp(16px, 2.5vh, 40px);
+  max-width: 700px;
+  font-weight: 600;
+}
+.social-spotlight-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(10px, 1.5vw, 20px);
+  margin-top: clamp(24px, 3.5vh, 60px);
+  padding: clamp(10px, 1.5vh, 16px) clamp(24px, 3vw, 48px) clamp(10px, 1.5vh, 16px) clamp(10px, 1.5vh, 16px);
+  border-radius: 80px;
+  font-size: clamp(18px, 2vw, 40px);
+  font-weight: 800;
+  color: #fff;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+.social-badge-icon {
+  width: clamp(60px, 7.5vw, 120px);
+  height: clamp(60px, 7.5vw, 120px);
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.social-badge-icon svg,
+.social-badge-icon .icon {
+  width: 60%;
+  height: 60%;
+  display: block;
+}
+
+.social-spotlight-dots {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+.social-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  transition: background 0.3s ease;
+}
+.social-dot.active {
+  background: #111111;
+}
+
+/* ── Platform brand colors for spotlight ── */
+.social-spotlight-brand-youtube .social-pretitle,
+.social-spotlight-brand-youtube .social-title { color: #FF0000; }
+.social-spotlight-brand-youtube .social-spotlight-badge { background: #FF0000; }
+
+.social-spotlight-brand-tiktok .social-pretitle,
+.social-spotlight-brand-tiktok .social-title { color: #000; }
+.social-spotlight-brand-tiktok .social-spotlight-badge { background: #000; }
+
+.social-spotlight-brand-facebook .social-pretitle,
+.social-spotlight-brand-facebook .social-title { color: #1877F2; }
+.social-spotlight-brand-facebook .social-spotlight-badge { background: #1877F2; }
+
+.social-spotlight-brand-instagram .social-pretitle,
+.social-spotlight-brand-instagram .social-title {
+  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.social-spotlight-brand-instagram .social-spotlight-badge {
+  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+}
+
+/* ---- Bible operator: Live & Pending sections ---- */
+.bible-presented-live-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  flex: 1;
+}
+.bible-presented-pending-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  flex: 1;
+  opacity: 0.85;
+}
+.bible-section-mini-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 4px 10px;
+  background: var(--color-bg);
+  border-radius: 4px 4px 0 0;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+.bible-pending-label {
+  background: #fff3cd;
+  color: #856404;
+}
+.bible-presented-live-section .bible-presented-preview {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.bible-presented-pending-section .bible-presented-preview {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.bible-presented-pending-section .bible-stage {
+  height: auto;
+  min-height: 100%;
+  padding: 6px;
+}
+.bible-presented-pending-section .bible-stage .bible-ref {
+  font-size: 7px !important;
+  padding: 2px 6px;
+  margin-bottom: 4px;
+  box-shadow: none;
+}
+.bible-presented-pending-section .bible-stage .bible-verse-text {
+  font-size: 9px !important;
+  line-height: 1.2;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.bible-change-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.bible-change-btn .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.bible-verse-badge-muted {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  padding: 4px 8px;
+}
+
+/* Operator book panel scroll area */
+.bible-book-panel-scroll {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Chapters and verses section below book panel in operator */
+.bible-panel-chapters-section {
+  border-top: 1.5px solid var(--color-border);
+  overflow-y: auto;
+  flex-shrink: 0;
+  max-height: 60vh;
+  background: var(--color-surface);
+}
+
+.bible-chapter-grid-slim {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+  gap: 5px;
+  padding: 4px 10px 10px;
+  max-height: 18vh;
+  overflow-y: auto;
+  align-content: start;
+}
+
+.bible-verse-grid-slim {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+  gap: 5px;
+  padding: 4px 10px 10px;
+  max-height: 30vh;
+  overflow-y: auto;
+  align-content: start;
+}
+
+.bible-panel-chapters-section .bible-chapter-num-btn {
+  height: 36px;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 980px) {
+  .bible-manager-layout-equal {
+    grid-template-columns: 1fr;
+  }
+  .bible-book-sidebar-equal {
+    max-height: 240px;
+  }
+  .bible-operator-view {
+    grid-template-columns: 1fr;
+  }
+  .bible-book-panel {
+    max-height: 260px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   Social Media Operator — Controller-style UI (soc-op-*)
+   Matches: kebena_mkc_controller.html design
+   ══════════════════════════════════════════════════════════ */
+
+/* Root wrapper */
+.soc-op-view {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #f4f6fb;
+}
+
+/* ── Top bar ── */
+.soc-op-topbar {
+  height: 60px;
+  background: linear-gradient(135deg, #1f4497 0%, #14306f 100%);
+  border-bottom: 1px solid rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  gap: 16px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+.soc-op-topbar-left  { display: flex; align-items: center; gap: 14px; }
+.soc-op-topbar-right { display: flex; align-items: center; gap: 14px; }
+
+/* Nav arrow buttons */
+.soc-op-nav-arrows { display: flex; gap: 6px; }
+.soc-op-nav-btn {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  padding: 0;
+}
+.soc-op-nav-btn svg { width: 16px; height: 16px; }
+.soc-op-nav-btn:hover {
+  background: rgba(255,255,255,0.26);
+  border-color: rgba(255,255,255,0.45);
+  transform: scale(1.05);
+}
+.soc-op-nav-btn:active { transform: scale(0.95); }
+
+/* Tab group */
+.soc-op-tab-group {
+  display: flex;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 2px;
+}
+.soc-op-tab {
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.72);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+  display: inline-flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+}
+.soc-op-tab:hover { background: rgba(255,255,255,0.18); color: #fff; }
+.soc-op-tab.soc-op-tab-active { background: #fff; color: #1f4497; }
+.soc-op-tab-live { gap: 7px; }
+
+/* Icon span inside tab / buttons */
+.soc-op-tab-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; flex-shrink: 0;
+}
+.soc-op-tab-icon svg { width: 14px; height: 14px; }
+
+/* Pulsing live dot */
+.soc-op-live-dot {
+  width: 8px; height: 8px;
+  background: #ed1c24;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(237,28,36,0.5);
+  animation: socOpPulse 1.8s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes socOpPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(237,28,36,0.5); }
+  50%       { opacity: 0.45; box-shadow: 0 0 4px rgba(237,28,36,0.2); }
+}
+
+/* Church name label */
+.soc-op-church-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+/* Exit button */
+.soc-op-exit-btn {
+  padding: 7px 16px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: rgba(255,255,255,0.88);
+  font-size: 12.5px; font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+}
+.soc-op-exit-btn:hover {
+  background: rgba(237,28,36,0.22);
+  border-color: #ed1c24;
+  color: #ed1c24;
+}
+
+/* ── Main two-column layout ── */
+.soc-op-main {
+  display: grid;
+  grid-template-columns: 1fr 310px;
+  flex: 1;
+  min-height: 0;
+  gap: 1px;
+  background: #dde3ef;
+}
+
+/* ── Left: preview area ── */
+.soc-op-preview-area {
+  background: #f4f6fb;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Side-by-side LIVE + PENDING */
+.soc-op-preview-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Preview card */
+.soc-op-preview-card {
+  background: #fff;
+  border: 1.5px solid #dde3ef;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.soc-op-live-card {
+  border-color: #ed1c24;
+  box-shadow: 0 0 0 1px #ed1c24, 0 6px 24px rgba(237,28,36,0.1);
+}
+
+/* Card header bar */
+.soc-op-preview-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 12px;
+  background: #eef2fb;
+  border-bottom: 1px solid #dde3ef;
+  flex-shrink: 0;
+}
+.soc-op-preview-label {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 10.5px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  color: #16213e;
+}
+.soc-op-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%; flex-shrink: 0;
+}
+.soc-op-dot-live {
+  background: #ed1c24;
+  box-shadow: 0 0 6px rgba(237,28,36,0.45);
+  animation: socOpPulse 1.8s ease-in-out infinite;
+}
+.soc-op-dot-next { background: #f59e0b; }
+
+.soc-op-preview-timer {
+  font-size: 11px; font-weight: 700;
+  color: #5c6a8a;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Progress bar (live card only) */
+.soc-op-slide-progress {
+  height: 3px;
+  background: #dde3ef;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.soc-op-slide-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #1f4497, #4a7de8);
+  width: 0%;
+  transition: width 0.15s linear;
+}
+
+/* 16:9 desktop preview screen */
+.soc-op-desktop-wrap {
+  background: #0a0a14;
+  display: flex; align-items: center; justify-content: center;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  flex: 1;
+}
+.soc-op-desktop-wrap .bible-stage {
+  padding: 8px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  /* In operator preview, the OUTER .soc-op-desktop-wrap is the scroll container.
+     The inner .bible-stage must grow naturally (height:auto, no own overflow) so the
+     outer wrapper can scroll. Removed height:100% and overflow-y:auto to avoid two
+     competing scroll containers. */
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+}
+.soc-op-desktop-wrap .bible-ref {
+  font-size: 10px !important;
+  padding: 4px 10px !important;
+  margin-bottom: 8px !important;
+  background-color: var(--color-accent) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  border-radius: 4px !important;
+}
+.soc-op-desktop-wrap .bible-verse-text {
+  font-size: 10px !important;
+  line-height: 1.35 !important;
+  color: var(--color-text) !important;
+  font-weight: 700 !important;
+  max-width: 100% !important;
+  text-align: left !important;
+}
+.soc-op-desktop-wrap .external-verse-block {
+  margin-bottom: 4px !important;
+}
+.soc-op-desktop-wrap .bible-external-verse-num {
+  font-size: 8px !important;
+  min-width: 14px !important;
+  height: 14px !important;
+  padding: 0 4px !important;
+  margin-right: 4px !important;
+  border-radius: 2px !important;
+}
+.soc-op-desktop-wrap .external-verse-text {
+  font-size: 8px !important;
+  font-weight: 700 !important;
+}
+.soc-op-desktop-wrap .select-scripture-msg {
+  font-size: 9px !important;
+  color: #aaa !important;
+  font-style: italic !important;
+  padding-top: 10px !important;
+  text-align: center !important;
+  width: 100% !important;
+}
+.select-scripture-msg {
+  font-size: clamp(24px, 3vw, 48px);
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding-top: 20px;
+  width: 100%;
+  text-align: center;
+}
+.soc-op-desktop-screen {
+  width: 100%; height: 100%;
+  background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Section label (divider + title) ── */
+.soc-op-section { flex-shrink: 0; }
+.soc-op-section-label {
+  font-size: 10.5px; font-weight: 800;
+  color: #7a89a8;
+  text-transform: uppercase; letter-spacing: 0.9px;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.soc-op-section-label::after {
+  content: '';
+  flex: 1; height: 1px;
+  background: #dde3ef;
+}
+
+/* ── Upcoming slides grid (single row, all fit) ── */
+.soc-op-upcoming-grid {
+  display: flex;
+  gap: 9px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.soc-op-upcoming-grid .soc-op-upcoming-card {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.soc-op-upcoming-card {
+  background: #fff;
+  border: 1.5px solid #dde3ef;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.soc-op-upcoming-card:hover {
+  border-color: #3a5fc0;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 16px rgba(31,68,151,0.12);
+}
+.soc-op-upcoming-active {
+  border-color: #1f4497 !important;
+  box-shadow: 0 0 0 2px rgba(31,68,151,0.18) !important;
+}
+.soc-op-upcoming-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 9px;
+  background: #eef2fb;
+  border-bottom: 1px solid #dde3ef;
+}
+.soc-op-upcoming-thumb {
+  min-width: 28px; height: 18px;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 7.5px; font-weight: 900; letter-spacing: 0.3px;
+  color: #fff;
+  padding: 0 5px;
+}
+.soc-op-upcoming-dur {
+  font-size: 9.5px; font-weight: 700;
+  color: #7a89a8;
+  font-variant-numeric: tabular-nums;
+}
+.soc-op-upcoming-card-body { padding: 7px 9px; }
+.soc-op-upcoming-name {
+  font-size: 11.5px; font-weight: 700;
+  color: #16213e;
+  margin-bottom: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.soc-op-upcoming-handle {
+  font-size: 10px; color: #7a89a8;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── Right: sidebar ── */
+.soc-op-sidebar {
+  background: #fff;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  min-height: 0;
+  border-left: 1px solid #dde3ef;
+}
+
+/* Autoplay status pill */
+.soc-op-autoplay-status {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(31,68,151,0.05);
+  border: 1px solid rgba(31,68,151,0.12);
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+.soc-op-autoplay-status-active {
+  background: rgba(31,68,151,0.1);
+  border-color: rgba(31,68,151,0.35);
+}
+.soc-op-autoplay-icon {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: #1f4497;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+  transition: transform 0.3s;
+}
+.soc-op-autoplay-icon svg { width: 14px; height: 14px; }
+.soc-op-autoplay-icon-spin {
+  animation: socOpSpin 2s linear infinite;
+}
+@keyframes socOpSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.soc-op-autoplay-text {
+  font-size: 12px; font-weight: 700;
+  color: #16213e;
+  line-height: 1.55;
+}
+.soc-op-autoplay-text span {
+  font-size: 10.5px; font-weight: 500;
+  color: #7a89a8;
+}
+
+/* Sidebar section header */
+.soc-op-sidebar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.soc-op-sidebar-title {
+  font-size: 10.5px; font-weight: 800;
+  color: #7a89a8;
+  text-transform: uppercase; letter-spacing: 0.9px;
+}
+
+/* Change button */
+.soc-op-btn-change {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: #1f4497;
+  border: none; color: #fff;
+  font-size: 11.5px; font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.soc-op-btn-change svg { width: 12px; height: 12px; }
+.soc-op-btn-change:hover { background: #3a5fc0; }
+.soc-op-btn-change:active { transform: scale(0.96); }
+
+/* Queue selector display */
+.soc-op-queue-select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f4f6fb;
+  border: 1px solid #dde3ef;
+  color: #16213e;
+  font-size: 12.5px; font-weight: 700;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.soc-op-queue-select svg { width: 14px; height: 14px; color: #7a89a8; flex-shrink: 0; }
+.soc-op-queue-badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: #1f4497;
+  color: #fff;
+  font-size: 10px; font-weight: 900;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+/* Account list */
+.soc-op-account-list {
+  display: flex; flex-direction: column; gap: 5px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+.soc-op-account-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1.5px solid #dde3ef;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  flex-shrink: 0;
+}
+.soc-op-account-item:hover {
+  background: #eef2fb;
+  border-color: #3a5fc0;
+  transform: translateX(2px);
+}
+.soc-op-account-active {
+  border-color: #1f4497 !important;
+  background: rgba(31,68,151,0.05) !important;
+}
+.soc-op-account-active::before {
+  content: '';
+  position: absolute; left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 52%;
+  background: #1f4497;
+  border-radius: 0 3px 3px 0;
+}
+.soc-op-account-num {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: #f0f3fa;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+  color: #7a89a8;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.soc-op-account-num-active { background: #1f4497; color: #fff; }
+.soc-op-account-info { flex: 1; min-width: 0; }
+.soc-op-account-handle {
+  font-size: 11.5px; font-weight: 700;
+  color: #16213e;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.soc-op-account-platform {
+  font-size: 10px; color: #7a89a8;
+  margin-top: 1px;
+}
+.soc-op-account-status {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 7px rgba(34,197,94,0.45);
+  flex-shrink: 0;
+}
+
+/* Telegram brand colour (spotlight slide) */
+.social-brand-telegram { background: #0088cc; }
+
+/* ---- Bible Quotes ---- */
+.present-overlay.present-bible-quotes { background: #ffffff; }
+.present-overlay.present-bible-quotes .present-header { display: none; }
+.present-overlay.present-bible-quotes .present-exit { display: none; }
+.present-overlay.present-bible-quotes::before { display: none; }
+
+.bq-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(24px, 3vh) 6vw max(36px, 4vh);
+  box-sizing: border-box;
+  font-family: var(--presentation-font);
+  gap: 0;
+}
+
+/* Top half: quote section */
+.bq-quote-section {
+  flex: 1.2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: 95vw;
+  width: 100%;
+  gap: clamp(10px, 2vh, 24px);
+  padding: 2vh 2vw;
+  min-height: 0;
+  position: relative; /* Container for absolute watermark */
+}
+
+/* Big background quote mark watermark */
+.bq-quote-mark {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(260px, 50vh, 650px);
+  line-height: 1;
+  color: var(--color-primary);
+  opacity: 0.07;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 900;
+  pointer-events: none;
+  z-index: 0;
+  user-select: none;
+}
+
+.bq-quote-text {
+  font-size: calc(clamp(24px, 3.5vw, 52px) * var(--bq-font-size, 1));
+  font-weight: 800;
+  line-height: 1.4;
+  color: #1a1a2e;
+  max-width: 90vw;
+  font-family: var(--presentation-font);
+  padding: 0 2vw;
+  position: relative;
+  z-index: 1;
+}
+
+.bq-quote-reference {
+  font-size: calc(clamp(14px, 1.8vw, 26px) * var(--bq-font-size, 1));
+  font-weight: 600;
+  color: var(--color-primary);
+  font-style: italic;
+  position: relative;
+  z-index: 1;
+}
+
+/* Bottom half: logo section — takes ~50% of screen */
+.bq-logo-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 1.5vh, 20px);
+  width: 100%;
+  padding: 1.5vh 2vw max(30px, 3vh);
+  min-height: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.bq-logo {
+  width: min(50vw, 480px);
+  max-width: 580px;
+  height: auto;
+  max-height: min(42vh, 340px);
+  object-fit: contain;
+  flex-shrink: 1;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.06));
+}
+
+.bq-church-name {
+  font-size: calc(2.2vw * var(--bq-font-size, 1));
+  font-weight: 700;
+  color: var(--color-primary);
+  text-align: center;
+  max-width: 80vw;
+  line-height: 1.3;
+  font-family: 'Noto Sans Ethiopic', sans-serif !important;
+}
+
+/* =========================================================
+   Bible Quote Templates 
+   ========================================================= */
+
+/* --- 1. Classic (Default) --- */
+/* The base .bq-* classes defined above serve as the classic template */
+
+/* --- 2. Modern Gradient --- */
+.bq-stage.bq-template-modern {
+  background: linear-gradient(135deg, #1f4497, #3a5fc0);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.bq-stage.bq-template-modern::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 60vh;
+  height: 60vh;
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+  border-radius: 50%;
+}
+.bq-stage.bq-template-modern .bq-quote-section {
+  flex: 3;
+}
+.bq-stage.bq-template-modern .bq-quote-mark {
+  color: rgba(255, 255, 255, 0.08);
+}
+.bq-stage.bq-template-modern .bq-quote-text {
+  color: #fff;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.bq-stage.bq-template-modern .bq-quote-reference {
+  color: #c7d0e6;
+  opacity: 0.9;
+}
+.bq-stage.bq-template-modern .bq-logo-section {
+  flex: 1;
+  flex-direction: row;
+  justify-content: center;
+}
+.bq-stage.bq-template-modern .bq-logo {
+  max-width: 380px;
+  max-height: 260px;
+  filter: brightness(0) invert(1);
+}
+.bq-stage.bq-template-modern .bq-church-name {
+  color: #fff;
+  font-size: calc(2.5vw * var(--bq-font-size, 1));
+  font-family: var(--presentation-font);
+}
+
+/* --- 3. Cinematic Dark --- */
+.bq-stage.bq-template-cinematic {
+  background: #0d1117;
+  color: #c9d1d9;
+}
+.bq-stage.bq-template-cinematic .bq-quote-section {
+  flex: 3;
+}
+.bq-stage.bq-template-cinematic .bq-quote-mark {
+  color: rgba(255, 255, 255, 0.05);
+}
+.bq-stage.bq-template-cinematic .bq-quote-text {
+  color: #e6edf3;
+  font-family: var(--presentation-font);
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+.bq-stage.bq-template-cinematic .bq-quote-reference {
+  color: #8b949e;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-style: normal;
+  font-size: calc(clamp(12px, 1.5vw, 22px) * var(--bq-font-size, 1));
+}
+.bq-stage.bq-template-cinematic .bq-logo-section {
+  flex: 1;
+  opacity: 0.7;
+}
+.bq-stage.bq-template-cinematic .bq-logo {
+  max-width: 380px;
+  max-height: 260px;
+  filter: grayscale(100%) brightness(200%);
+}
+.bq-stage.bq-template-cinematic .bq-church-name {
+  color: #8b949e;
+  letter-spacing: 1px;
+}
+
+/* --- 4. Minimalist --- */
+.bq-stage.bq-template-minimal {
+  background: #ffffff;
+}
+.bq-stage.bq-template-minimal .bq-quote-section {
+  flex: 4;
+}
+.bq-stage.bq-template-minimal .bq-quote-mark {
+  display: none;
+}
+.bq-stage.bq-template-minimal .bq-quote-text {
+  color: #111827;
+  border-left: 8px solid #111827;
+  padding-left: 24px;
+  text-align: left;
+  max-width: 90vw;
+}
+.bq-stage.bq-template-minimal .bq-quote-reference {
+  color: #4b5563;
+  text-align: left;
+  width: 100%;
+  max-width: 90vw;
+  padding-left: 32px;
+}
+.bq-stage.bq-template-minimal .bq-logo-section {
+  flex: 1;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: flex-end;
+  width: 100%;
+  padding: 0 4vw 4vh 0;
+  gap: 16px;
+}
+.bq-stage.bq-template-minimal .bq-logo {
+  max-width: 340px;
+  max-height: 240px;
+  opacity: 1;
+}
+.bq-stage.bq-template-minimal .bq-church-name {
+  color: #6b7280;
+  font-size: calc(1.6vw * var(--bq-font-size, 1));
+  font-family: var(--presentation-font);
+}
+
+/* =========================================================
+   Bible Quote Custom Background Overlays
+   ========================================================= */
+
+.bq-stage {
+  position: relative;
+  z-index: 0;
+}
+
+.bq-bg-layer {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.bq-bg-layer img,
+.bq-bg-layer video,
+.bq-bg-layer iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.bq-bg-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: none;
+}
+
+.bq-quote-section,
+.bq-logo-section {
+  position: relative;
+  z-index: 2;
+}
+
+/* Active media state overrides */
+.bq-stage.bq-has-media {
+  background: transparent !important;
+}
+.bq-stage.bq-has-media::before {
+  display: none !important;
+}
+.bq-stage.bq-has-media .bq-bg-overlay {
+  display: block;
+}
+
+/* Template-specific 85% opacity overlays */
+.bq-stage.bq-has-media.bq-template-classic .bq-bg-overlay {
+  background: rgba(15, 23, 42, 0.85);
+}
+.bq-stage.bq-has-media.bq-template-modern .bq-bg-overlay {
+  background: linear-gradient(135deg, rgba(31, 68, 151, 0.85), rgba(58, 95, 192, 0.85));
+}
+.bq-stage.bq-has-media.bq-template-cinematic .bq-bg-overlay {
+  background: rgba(13, 17, 23, 0.85);
+}
+.bq-stage.bq-has-media.bq-template-minimal .bq-bg-overlay {
+  background: rgba(15, 23, 42, 0.85);
+}
+
+/* All text on background media must be crisp white with shadow for contrast */
+.bq-stage.bq-has-media .bq-quote-mark,
+.bq-stage.bq-has-media .bq-quote-text,
+.bq-stage.bq-has-media .bq-quote-reference,
+.bq-stage.bq-has-media .bq-church-name {
+  color: #ffffff !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+.bq-stage.bq-has-media .bq-quote-text {
+  border-left-color: #ffffff !important;
+}
+
+.lyrics-stage.lyrics-has-bg,
+.lyrics-stage.lyrics-has-bg .lyrics-slide-text,
+.lyrics-stage.lyrics-has-bg .lyrics-slide-text .kw,
+.lyrics-stage.lyrics-has-bg .lyric-line {
+  color: #ffffff !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Countdown Background Media Overlays ── */
+.countdown-stage.countdown-has-bg {
+  position: relative;
+  background: transparent !important;
+}
+.countdown-bg-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.countdown-bg-layer img,
+.countdown-bg-layer video,
+.countdown-bg-layer iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.countdown-bg-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.countdown-stage.countdown-has-bg .countdown-title,
+.countdown-stage.countdown-has-bg .countdown-digits,
+.countdown-stage.countdown-has-bg .countdown-eth-time,
+.countdown-stage.countdown-has-bg .flip-card-digits,
+.countdown-stage.countdown-has-bg .flip-card-label {
+  position: relative;
+  z-index: 2;
+  color: #ffffff !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+.countdown-stage.countdown-has-bg .flip-card {
+  position: relative;
+  z-index: 2;
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+.countdown-stage.countdown-has-bg .stopwatch-dial {
+  position: relative;
+  z-index: 2;
+  background: rgba(15, 23, 42, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* =========================================================
+   Performance & GPU Compositor Optimizations
+   ========================================================= */
+
+/* ── Performance: promote animated layers ── */
+.soundwave-bar,
+.circle-bar,
+.glow-path,
+.floating-dot,
+.ripple-ring,
+.breathing-glow-orb,
+.pulse-cross-shape,
+.social-dot,
+.social-spotlight,
+.notice-card,
+.bank-card,
+.bank-spotlight-card,
+.lyrics-slide-text .kw,
+.creed-line .cw {
+  will-change: transform, opacity;
+}
+
+/* CSS Layout & Paint Containment for high-frequency lists */
+.operator-slide-row,
+.operator-media-item,
+.item-row,
+.soc-op-desktop-wrap {
+  contain: layout style;
+}
+
+/* ── Accessibility: disable heavy animations on request ── */
+@media (prefers-reduced-motion: reduce) {
+  .soundwave-bar,
+  .circle-bar,
+  .glow-path,
+  .floating-dot,
+  .ripple-ring,
+  .breathing-glow-orb,
+  .pulse-cross-shape,
+  .social-dot,
+  .social-spotlight,
+  .notice-card,
+  .bank-card,
+  .bank-spotlight-card,
+  .lyrics-slide-text .kw,
+  .creed-line .cw {
+    animation: none !important;
+    transition: none !important;
+    will-change: auto !important;
+  }
+}

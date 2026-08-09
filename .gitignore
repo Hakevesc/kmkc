@@ -1,0 +1,28 @@
+# Dependencies — restored with `npm install`
+node_modules/
+
+# Build output — installers are published as GitHub Releases, not committed
+# (the NSIS installer alone is ~82 MB, over GitHub's 100 MB file limit territory)
+dist/
+out/
+
+# Windows shell artifacts
+desktop.ini
+Thumbs.db
+# Stray file created by an accidental `> nul` redirect
+nul
+
+# Logs and local caches
+*.log
+npm-debug.log*
+.npm/
+.cache/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Local environment
+.env
+.env.*
