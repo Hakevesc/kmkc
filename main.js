@@ -1415,3 +1415,86 @@ ipcMain.on('present:closeRequest', () => {
     mainWindow.webContents.send('present:closed');
   }
 });
+
+// ── Auto-update ────────────────────────────────────────────────────────────
+// Checks GitHub Releases (Hakevesc/kmkc) for a newer version, downloads it in
+// the background, and installs on quit.
+//
+// A church PC is mid-service for hours at a time, so this deliberately never
+// takes the app down on its own: nothing is installed while the audience screen
+// is live, and the restart is always the operator's choice.
+const { autoUpdater } = require('electron-updater');
+
+let updateState = { status: 'idle', version: null, error: null, percent: 0 };
+
+function sendUpdateState() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update:state', updateState);
+  }
+}
+
+function setUpdateState(patch) {
+  updateState = Object.assign({}, updateState, patch);
+  sendUpdateState();
+}
+
+// We drive download/install explicitly so a service is never interrupted.
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
+
+autoUpdater.on('checking-for-update', () => setUpdateState({ status: 'checking', error: null }));
+autoUpdater.on('update-available', (info) => {
+  setUpdateState({ status: 'available', version: info.version, percent: 0 });
+  // Fetch in the background — installing still waits for the operator.
+  autoUpdater.downloadUpdate().catch((err) => {
+    setUpdateState({ status: 'error', error: err.message });
+  });
+});
+autoUpdater.on('update-not-available', () => setUpdateState({ status: 'current', error: null }));
+autoUpdater.on('download-progress', (p) => {
+  setUpdateState({ status: 'downloading', percent: Math.round(p.percent) });
+});
+autoUpdater.on('update-downloaded', (info) => {
+  setUpdateState({ status: 'ready', version: info.version, percent: 100 });
+});
+autoUpdater.on('error', (err) => {
+  // Offline, no releases published yet, or rate-limited — all non-fatal.
+  setUpdateState({ status: 'error', error: (err && err.message) || String(err) });
+});
+
+ipcMain.handle('update:getState', () => updateState);
+
+ipcMain.handle('update:check', async () => {
+  // Updates are only meaningful for an installed build; in `npm start` there is
+  // no installer to replace, and electron-updater throws instead of no-oping.
+  if (!app.isPackaged) {
+    setUpdateState({ status: 'dev', error: 'Update checks only run in the installed app.' });
+    return updateState;
+  }
+  try {
+    await autoUpdater.checkForUpdates();
+  } catch (err) {
+    setUpdateState({ status: 'error', error: err.message });
+  }
+  return updateState;
+});
+
+// Restart into the new version. Refused while the audience screen is live so a
+// mis-click can't black out the projector mid-service.
+ipcMain.handle('update:install', () => {
+  if (updateState.status !== 'ready') return { installed: false, reason: 'not-ready' };
+  if (presentWindow && !presentWindow.isDestroyed()) {
+    return { installed: false, reason: 'presenting' };
+  }
+  setImmediate(() => autoUpdater.quitAndInstall(false, true));
+  return { installed: true };
+});
+
+// One quiet check shortly after launch, then every 6 hours for machines that
+// are left on all week. Failures are swallowed by the error handler above.
+app.whenReady().then(() => {
+  if (!app.isPackaged) return;
+  const check = () => autoUpdater.checkForUpdates().catch(() => {});
+  setTimeout(check, 15000);
+  setInterval(check, 6 * 60 * 60 * 1000);
+});

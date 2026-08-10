@@ -17,6 +17,11 @@ window.Store = {
   presentNavigate(url) { return window.api.presentNavigate(url); },
   presentClose() { return window.api.presentClose(); },
   presentIsOpen() { return window.api.presentIsOpen(); },
+  // Auto-update
+  updateCheck() { return window.api.updateCheck(); },
+  updateGetState() { return window.api.updateGetState(); },
+  updateInstall() { return window.api.updateInstall(); },
+  onUpdateState(callback) { return window.api.onUpdateState(callback); },
   onPresentClosed(callback) { return window.api.onPresentClosed(callback); },
   // Bible content update
   saveBibleVerse(payload) { return window.api.saveBibleVerse(payload); },

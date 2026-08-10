@@ -6,7 +6,8 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "release": "electron-builder --publish always"
   },
   "build": {
     "appId": "com.kebena.display",
@@ -22,6 +23,13 @@
       "output": "dist",
       "buildResources": "build"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Hakevesc",
+        "repo": "kmkc"
+      }
+    ],
     "win": {
       "icon": "build/icon.ico",
       "target": [
@@ -30,6 +38,7 @@
     }
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "mammoth": "^1.7.0",
     "puppeteer": "^22.15.0",
     "qrcode": "^1.5.4"

@@ -16,6 +16,7 @@ window.Settings = {
         ${this._renderLyricsSection(S)}
         ${this._renderNoticesSection(S)}
         ${this._renderSocialSection(S)}
+        ${this._renderUpdateSection(S)}
       </div>
       <div class="settings-footer">
         <span class="settings-footer-hint">${S.footerHintEn || 'Changes apply to the next presentation.'}</span>
@@ -24,6 +25,73 @@ window.Settings = {
     `;
 
     document.getElementById('settingsSaveBtn').addEventListener('click', () => this.save());
+    this._wireUpdateSection();
+  },
+
+  /* ---------- Section: Updates ---------- */
+  _renderUpdateSection(S) {
+    return `
+      <section class="settings-section">
+        <div class="settings-section-head">
+          <h3 class="settings-section-title">Updates</h3>
+          <p class="settings-section-desc">New versions are downloaded in the background and installed when you restart. Nothing is ever installed while the second screen is live.</p>
+        </div>
+        <div class="settings-rows">
+          <div class="settings-row">
+            <div class="settings-row-label">
+              <span class="settings-row-name">Application version</span>
+              <span class="settings-row-hint" id="setUpdateStatus">Checking...</span>
+            </div>
+            <div class="settings-row-control" style="display:flex; gap:8px; align-items:center;">
+              <button type="button" class="op-btn-toggle op-btn-sm" id="setUpdateCheckBtn">Check for Updates</button>
+              <button type="button" class="op-btn-present" id="setUpdateInstallBtn" style="display:none;">
+                <span class="icon">${window.ICONS.refresh}</span> Restart &amp; Install
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+  },
+
+  _wireUpdateSection() {
+    const statusEl = document.getElementById('setUpdateStatus');
+    const checkBtn = document.getElementById('setUpdateCheckBtn');
+    const installBtn = document.getElementById('setUpdateInstallBtn');
+    if (!statusEl || !checkBtn) return;
+
+    const render = (s) => {
+      if (!s) return;
+      const v = s.version ? ' (v' + s.version + ')' : '';
+      const messages = {
+        idle: 'Ready to check for updates.',
+        checking: 'Checking for updates...',
+        current: 'You are running the latest version.',
+        available: 'Update found' + v + ' - downloading...',
+        downloading: 'Downloading update' + v + '... ' + s.percent + '%',
+        ready: 'Update' + v + ' is ready. Restart to install.',
+        dev: s.error,
+        error: 'Could not check for updates: ' + (s.error || 'unknown error')
+      };
+      statusEl.textContent = messages[s.status] || s.status;
+      checkBtn.disabled = (s.status === 'checking' || s.status === 'downloading');
+      installBtn.style.display = (s.status === 'ready') ? 'inline-flex' : 'none';
+    };
+
+    checkBtn.onclick = () => window.Store.updateCheck().then(render).catch(() => {});
+    installBtn.onclick = async () => {
+      const res = await window.Store.updateInstall().catch(() => null);
+      if (res && !res.installed && res.reason === 'presenting') {
+        statusEl.textContent = 'Close the presentation first - the second screen is still live.';
+      }
+    };
+
+    // Progress arrives from the main process as the download runs.
+    if (!window.Settings._updateBound) {
+      window.Settings._updateBound = true;
+      window.Store.onUpdateState(render);
+    }
+    window.Store.updateGetState().then(render).catch(() => {});
   },
 
   /* ---------- Section: Church ---------- */
