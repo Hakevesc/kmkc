@@ -35,7 +35,8 @@
       "target": [
         "nsis"
       ]
-    }
+    },
+    "artifactName": "KebenaMKCChurchDisplay-Setup-${version}.${ext}"
   },
   "dependencies": {
     "electron-updater": "^6.8.9",
