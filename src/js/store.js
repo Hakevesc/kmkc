@@ -18,8 +18,10 @@ window.Store = {
   presentClose() { return window.api.presentClose(); },
   presentIsOpen() { return window.api.presentIsOpen(); },
   // Auto-update
+  getVersion() { return window.api.getVersion(); },
   updateCheck() { return window.api.updateCheck(); },
   updateGetState() { return window.api.updateGetState(); },
+  updateDownload() { return window.api.updateDownload(); },
   updateInstall() { return window.api.updateInstall(); },
   onUpdateState(callback) { return window.api.onUpdateState(callback); },
   onPresentClosed(callback) { return window.api.onPresentClosed(callback); },

@@ -1,6 +1,6 @@
 {
   "name": "kebena-mkc-display",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Kebena MKC Church TV display app: song lyrics, weekly notices, bank accounts",
   "main": "main.js",
   "private": true,

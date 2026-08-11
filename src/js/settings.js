@@ -34,16 +34,19 @@ window.Settings = {
       <section class="settings-section">
         <div class="settings-section-head">
           <h3 class="settings-section-title">Updates</h3>
-          <p class="settings-section-desc">New versions are downloaded in the background and installed when you restart. Nothing is ever installed while the second screen is live.</p>
+          <p class="settings-section-desc">Check for a new version, then choose when to download and restart. Nothing is ever installed while the second screen is live.</p>
         </div>
         <div class="settings-rows">
           <div class="settings-row">
             <div class="settings-row-label">
-              <span class="settings-row-name">Application version</span>
-              <span class="settings-row-hint" id="setUpdateStatus">Checking...</span>
+              <span class="settings-row-name">Application version <span id="setAppVersion" style="font-weight:400; color:var(--color-text-muted);"></span></span>
+              <span class="settings-row-hint" id="setUpdateStatus">Ready to check for updates.</span>
             </div>
             <div class="settings-row-control" style="display:flex; gap:8px; align-items:center;">
               <button type="button" class="op-btn-toggle op-btn-sm" id="setUpdateCheckBtn">Check for Updates</button>
+              <button type="button" class="op-btn-present" id="setUpdateDownloadBtn" style="display:none;">
+                <span class="icon">${window.ICONS.download}</span> Download Update
+              </button>
               <button type="button" class="op-btn-present" id="setUpdateInstallBtn" style="display:none;">
                 <span class="icon">${window.ICONS.refresh}</span> Restart &amp; Install
               </button>
@@ -57,34 +60,46 @@ window.Settings = {
   _wireUpdateSection() {
     const statusEl = document.getElementById('setUpdateStatus');
     const checkBtn = document.getElementById('setUpdateCheckBtn');
+    const downloadBtn = document.getElementById('setUpdateDownloadBtn');
     const installBtn = document.getElementById('setUpdateInstallBtn');
+    const versionEl = document.getElementById('setAppVersion');
     if (!statusEl || !checkBtn) return;
 
     const render = (s) => {
       if (!s) return;
-      const v = s.version ? ' (v' + s.version + ')' : '';
+      const v = s.version ? ' v' + s.version : '';
       const messages = {
         idle: 'Ready to check for updates.',
         checking: 'Checking for updates...',
         current: 'You are running the latest version.',
-        available: 'Update found' + v + ' - downloading...',
-        downloading: 'Downloading update' + v + '... ' + s.percent + '%',
+        available: 'Update' + v + ' is available.',
+        downloading: 'Downloading' + v + '... ' + s.percent + '%',
         ready: 'Update' + v + ' is ready. Restart to install.',
         dev: s.error,
         error: 'Could not check for updates: ' + (s.error || 'unknown error')
       };
       statusEl.textContent = messages[s.status] || s.status;
       checkBtn.disabled = (s.status === 'checking' || s.status === 'downloading');
+      downloadBtn.style.display = (s.status === 'available') ? 'inline-flex' : 'none';
       installBtn.style.display = (s.status === 'ready') ? 'inline-flex' : 'none';
     };
 
+    // Exposed like the other modules' _render* helpers so the state can be
+    // re-applied (and exercised) without waiting on a real release.
+    this._renderUpdateState = render;
+
     checkBtn.onclick = () => window.Store.updateCheck().then(render).catch(() => {});
+    downloadBtn.onclick = () => window.Store.updateDownload().catch(() => {});
     installBtn.onclick = async () => {
       const res = await window.Store.updateInstall().catch(() => null);
       if (res && !res.installed && res.reason === 'presenting') {
         statusEl.textContent = 'Close the presentation first - the second screen is still live.';
       }
     };
+
+    window.Store.getVersion()
+      .then((v) => { if (versionEl && v) versionEl.textContent = 'v' + v; })
+      .catch(() => {});
 
     // Progress arrives from the main process as the download runs.
     if (!window.Settings._updateBound) {

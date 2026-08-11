@@ -19,8 +19,10 @@ contextBridge.exposeInMainWorld('api', {
   presentClose: () => ipcRenderer.invoke('present:close'),
   presentIsOpen: () => ipcRenderer.invoke('present:isOpen'),
   // Auto-update
+  getVersion: () => ipcRenderer.invoke('app:getVersion'),
   updateCheck: () => ipcRenderer.invoke('update:check'),
   updateGetState: () => ipcRenderer.invoke('update:getState'),
+  updateDownload: () => ipcRenderer.invoke('update:download'),
   updateInstall: () => ipcRenderer.invoke('update:install'),
   onUpdateState: (callback) => {
     ipcRenderer.on('update:state', (event, state) => callback(state));

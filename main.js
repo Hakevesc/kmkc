@@ -1426,6 +1426,10 @@ ipcMain.on('present:closeRequest', () => {
 const { autoUpdater } = require('electron-updater');
 
 let updateState = { status: 'idle', version: null, error: null, percent: 0 };
+// True while a check was started by the app rather than the operator. Those
+// run on a timer against whatever network the church has that day, so their
+// failures must not surface as an error the operator never asked for.
+let silentCheck = false;
 
 function sendUpdateState() {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -1444,11 +1448,9 @@ autoUpdater.autoInstallOnAppQuit = true;
 
 autoUpdater.on('checking-for-update', () => setUpdateState({ status: 'checking', error: null }));
 autoUpdater.on('update-available', (info) => {
+  // Stop at "available". The installer is ~82MB and a church connection is
+  // often metered or shared, so downloading is the operator's call.
   setUpdateState({ status: 'available', version: info.version, percent: 0 });
-  // Fetch in the background — installing still waits for the operator.
-  autoUpdater.downloadUpdate().catch((err) => {
-    setUpdateState({ status: 'error', error: err.message });
-  });
 });
 autoUpdater.on('update-not-available', () => setUpdateState({ status: 'current', error: null }));
 autoUpdater.on('download-progress', (p) => {
@@ -1459,10 +1461,15 @@ autoUpdater.on('update-downloaded', (info) => {
 });
 autoUpdater.on('error', (err) => {
   // Offline, no releases published yet, or rate-limited — all non-fatal.
+  // A background check that fails leaves the previous state alone, so the
+  // operator doesn't open Settings to an error they never triggered.
+  if (silentCheck) return;
   setUpdateState({ status: 'error', error: (err && err.message) || String(err) });
 });
 
 ipcMain.handle('update:getState', () => updateState);
+
+ipcMain.handle('app:getVersion', () => app.getVersion());
 
 ipcMain.handle('update:check', async () => {
   // Updates are only meaningful for an installed build; in `npm start` there is
@@ -1471,12 +1478,24 @@ ipcMain.handle('update:check', async () => {
     setUpdateState({ status: 'dev', error: 'Update checks only run in the installed app.' });
     return updateState;
   }
+  silentCheck = false;
   try {
     await autoUpdater.checkForUpdates();
   } catch (err) {
     setUpdateState({ status: 'error', error: err.message });
   }
   return updateState;
+});
+
+// Download the pending update. Separate from the check so the operator chooses
+// when ~82MB crosses the church's connection.
+ipcMain.handle('update:download', () => {
+  if (updateState.status !== 'available') return { started: false, reason: 'nothing-to-download' };
+  setUpdateState({ status: 'downloading', percent: 0 });
+  autoUpdater.downloadUpdate().catch((err) => {
+    setUpdateState({ status: 'error', error: err.message });
+  });
+  return { started: true };
 });
 
 // Restart into the new version. Refused while the audience screen is live so a
@@ -1486,7 +1505,9 @@ ipcMain.handle('update:install', () => {
   if (presentWindow && !presentWindow.isDestroyed()) {
     return { installed: false, reason: 'presenting' };
   }
-  setImmediate(() => autoUpdater.quitAndInstall(false, true));
+  // Silent install + relaunch: the NSIS build is oneClick, so there is no
+  // meaningful installer UI to show a volunteer operator mid-Sunday.
+  setImmediate(() => autoUpdater.quitAndInstall(true, true));
   return { installed: true };
 });
 
@@ -1494,7 +1515,10 @@ ipcMain.handle('update:install', () => {
 // are left on all week. Failures are swallowed by the error handler above.
 app.whenReady().then(() => {
   if (!app.isPackaged) return;
-  const check = () => autoUpdater.checkForUpdates().catch(() => {});
+  const check = () => {
+    silentCheck = true;
+    autoUpdater.checkForUpdates().catch(() => {}).finally(() => { silentCheck = false; });
+  };
   setTimeout(check, 15000);
   setInterval(check, 6 * 60 * 60 * 1000);
 });
