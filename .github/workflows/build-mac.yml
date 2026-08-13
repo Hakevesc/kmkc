@@ -1,0 +1,53 @@
+name: Build macOS Installer
+
+# Produces unsigned macOS installers (no Apple Developer ID, so no signing).
+# Triggers on:
+#   - pushing a tag like v1.0.1  -> builds AND publishes to the GitHub Release
+#   - manual workflow_dispatch   -> builds and uploads as workflow artifacts only
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: macOS (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: macos-13      # Intel mac runner
+          - arch: arm64
+            runner: macos-14      # Apple Silicon mac runner
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build unsigned macOS app (${{ matrix.arch }})
+        env:
+          # No Apple Developer ID available: never attempt to auto-discover a
+          # signing identity. Combined with mac.identity:null this yields an
+          # unsigned build (Gatekeeper warns, but the app still runs).
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          # Lets electron-builder push to GitHub Releases (publish config).
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --mac --arch ${{ matrix.arch }} --publish ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KebenaMKC-macOS-${{ matrix.arch }}
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/latest-mac.yml

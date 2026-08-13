@@ -36,6 +36,16 @@
         "nsis"
       ]
     },
+    "mac": {
+      "icon": "build/icon.png",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.education",
+      "identity": null,
+      "artifactName": "KebenaMKCChurchDisplay-mac-${version}-${arch}.${ext}"
+    },
     "artifactName": "KebenaMKCChurchDisplay-Setup-${version}.${ext}"
   },
   "dependencies": {
