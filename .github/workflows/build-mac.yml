@@ -18,8 +18,10 @@ jobs:
       matrix:
         include:
           - arch: x64
+            archFlag: --x64
             runner: macos-13      # Intel mac runner
           - arch: arm64
+            archFlag: --arm64
             runner: macos-14      # Apple Silicon mac runner
     runs-on: ${{ matrix.runner }}
     steps:
@@ -27,7 +29,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -41,7 +43,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           # Lets electron-builder push to GitHub Releases (publish config).
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --mac --arch ${{ matrix.arch }} --publish ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
+        run: npx electron-builder --mac ${{ matrix.archFlag }} --publish ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
