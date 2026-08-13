@@ -10,6 +10,13 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# GITHUB_TOKEN must be able to create the GitHub Release and upload assets.
+# The repo default workflow permission is read-only, so we explicitly request
+# write access to contents (electron-builder's documented fix for the
+# "Resource not accessible by integration" 403 when publishing).
+permissions:
+  contents: write
+
 jobs:
   build:
     name: macOS (${{ matrix.arch }})
@@ -46,6 +53,7 @@ jobs:
         run: npx electron-builder --mac ${{ matrix.archFlag }} --publish ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
 
       - name: Upload DMG artifact
+        if: always()   # keep the .dmg even if only the publish step failed
         uses: actions/upload-artifact@v4
         with:
           name: KebenaMKC-macOS-${{ matrix.arch }}
