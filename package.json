@@ -27,7 +27,8 @@
       {
         "provider": "github",
         "owner": "Hakevesc",
-        "repo": "kmkc"
+        "repo": "kmkc",
+        "releaseType": "release"
       }
     ],
     "win": {
